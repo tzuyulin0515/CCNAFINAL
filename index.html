@@ -1,0 +1,5488 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國際認證管理 - 刷題機</title>
+    <style>
+        /* --- 基礎美化樣式 --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { background: white; max-width: 800px; width: 100%; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; }
+        .content { padding: 30px; overflow-y: auto; flex-grow: 1; }
+        .btn { display: block; width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #e5e7eb; border-radius: 10px; background: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn:hover { border-color: #3b82f6; background: #eff6ff; }
+        .btn-primary { background: #2563eb; color: white; border: none; margin-top: 20px; }
+        .btn-primary:hover { background: #1d4ed8; color: white; }
+        .btn-disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; border: none; margin-top: 20px; }
+        .tag { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px; margin-bottom: 10px; }
+        .tag-multi { background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+        .tag-single { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .tag-match { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; } /* 新增配對題標籤樣式 */
+        .tag-img { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+        .option-label { display: flex; align-items: flex-start; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .option-label:hover { border-color: #bfdbfe; background: #f8fafc; }
+        .option-label.selected { border-color: #3b82f6; background: #eff6ff; }
+        .option-label input { margin-top: 5px; margin-right: 15px; transform: scale(1.2); }
+        .question-img { max-width: 100%; max-height: 300px; border-radius: 8px; margin: 15px 0; border: 1px solid #e5e7eb; }
+        .result-box { text-align: center; padding: 30px 0; border-bottom: 2px solid #f3f4f6; }
+        .score-circle { display: inline-flex; align-items: center; justify-content: center; width: 100px; height: 100px; border-radius: 50%; background: #eff6ff; color: #2563eb; font-size: 32px; font-weight: bold; margin-bottom: 15px; }
+        .wrong-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .wrong-item h4 { margin: 0 0 10px 0; }
+        .ans-box { display: flex; gap: 20px; margin-top: 15px; }
+        .ans-box > div { flex: 1; padding: 15px; border-radius: 8px; font-size: 14px; overflow-wrap: break-word;}
+        .your-ans { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .correct-ans { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <!-- 畫面由JS動態生成 -->
+</div>
+
+<script>
+// ==========================================
+// 1. 題庫資料區 
+// ==========================================
+const quizData = [
+  {
+    id: 'Q5', unit: 'chapter1', type: 'multiple',
+    questionEn: 'QUESTION 5: What are two reasons that cause late collisions to increment on an Ethernet interface? (Choose two.)',
+    questionZh: '在乙太網介面上導致後期碰撞(Late Collisions)增加的兩個原因是什麼？(選擇兩個)',
+    options: [
+      { id: 'A', text: 'when the sending device waits 15 seconds before sending the frame again' },
+      { id: 'B', text: 'when the cable length limits are exceeded' },
+      { id: 'C', text: 'when one side of the connection is configured for half-duplex' },
+      { id: 'D', text: 'when Carrier Sense Multiple Access/Collision Detection is used' },
+      { id: 'E', text: 'when a collision occurs after the 32nd byte of a frame has been transmitted' }
+    ],
+    correctAnswers: ['B', 'C']
+  },
+  {
+    id: 'Q11', unit: 'chapter1', type: 'multiple',
+    questionEn: 'QUESTION 11: What are two descriptions of three-tier network topologies? (Choose two.)',
+    questionZh: '三層網路拓撲的兩個描述是什麼？ (選擇兩個)',
+    options: [
+      { id: 'A', text: 'The distribution layer runs Layer 2 and Layer 3 technologies.' },
+      { id: 'B', text: 'The network core is designed to maintain continuous connectivity when devices fail.' },
+      { id: 'C', text: 'The core layer maintains wired connections for each host.' },
+      { id: 'D', text: 'The core and distribution layers perform the same functions.' },
+      { id: 'E', text: 'The access layer manages routing between devices in different domains.' }
+    ],
+    correctAnswers: ['A', 'B']
+  },
+  {
+    id: 'Q24', unit: 'chapter1', type: 'single',
+    questionEn: 'QUESTION 24: What is a characteristic of spine-and-leaf architecture?',
+    questionZh: '骨幹和樹葉架構(Spine-and-Leaf Architecture)的特點是什麼？',
+    options: [
+      { id: 'A', text: 'It provides variable latency.' },
+      { id: 'B', text: 'Each link between leaf switches allows for higher bandwidth.' },
+      { id: 'C', text: 'Each device is separated by the same number of hops.' },
+      { id: 'D', text: 'It provides greater predictability on STP blocked ports.' }
+    ],
+    correctAnswers: ['C']
+  },
+
+  {
+    "id": "Q54",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q54.png",
+    "questionEn": "QUESTION 54: Refer to the exhibit.Which prefix does Router 1 use to Host A ?",
+    "questionZh": "請參閱圖表。路由器 1 對主機 A 使⽤哪個前置碼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "10.10.10.0/28"
+      },
+      {
+        "id": "B",
+        "text": "10.10.13.0/25"
+      },
+      {
+        "id": "C",
+        "text": "10.10.13.144/28"
+      },
+      {
+        "id": "D",
+        "text": "10.10.13.208/29"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q90",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q90.png",
+    "questionEn": "QUESTION 90: Refer to the exhibit. With which metric was the route to host 172.16.0.202 learned?",
+    "questionZh": "請參⾒圖⽰。 到主機 172.16.0.202 的路由是通過哪個衡量[metric]指標獲知的？",
+    "options": [
+      {
+        "id": "A",
+        "text": "0"
+      },
+      {
+        "id": "B",
+        "text": "110"
+      },
+      {
+        "id": "C",
+        "text": "38443"
+      },
+      {
+        "id": "D",
+        "text": "3184439"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q91",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q91.png",
+    "questionEn": "QUESTION 91: A packet is destined for 10.10.1.22 .which static route does the router choose to forward the packet ?",
+    "questionZh": "封包發往10.10.1.22。路由器選擇轉發哪個靜態路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ip route 10.10.1.0 255.255.255.240 10.10.255.1"
+      },
+      {
+        "id": "B",
+        "text": "ip route 10.10.1.20 255.255.255.252 10.10.255.1"
+      },
+      {
+        "id": "C",
+        "text": "ip route 10.10.1.20 255.255.255.254 10.10.255.1"
+      },
+      {
+        "id": "D",
+        "text": "ip route 10.10.1.16 255.255.255.252 10.10.255.1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q93",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q93.png",
+    "questionEn": "QUESTION 93: Refer to the exhibit. Router R1 Fa0/0 cannot ping router R3 Fa0/1. Which action must be taken in router R1 to help resolve the configuration issue?",
+    "questionZh": "請參⾒圖⽰。 路由器R1 Fa0/0無法 ping通 路由器R3 Fa0/1。必須在路由器R1中採取哪些措施來幫助解決配置問題？",
+    "options": [
+      {
+        "id": "A",
+        "text": "set the default network as 20.20.20.0/24"
+      },
+      {
+        "id": "B",
+        "text": "configure a static route with Fa0/1 as the egress interface to reach the 20.20.20.0/24 network"
+      },
+      {
+        "id": "C",
+        "text": "set the default gateway as 20.20.20.2"
+      },
+      {
+        "id": "D",
+        "text": "configure a static route with 10.10.10.2 as the next hop to reach the 20.20.20.0/24 network"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q128",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q128.png",
+    "questionEn": "QUESTION 128: Refer to the exhibit. If OSPF is running on this network,how does Router 2 handle traffic from Site B to 10.10.13.128/25 at Site A?",
+    "questionZh": "請參⾒圖⽰。 如果 OSPF 在此網路上運⾏，路由器 2 如何處理從站點 B 到站點 A 的 10.10.13.128/25 的流量？",
+    "options": [
+      {
+        "id": "A",
+        "text": "It sends packets out of interface Fa0/2 only."
+      },
+      {
+        "id": "B",
+        "text": "It sends packets out of interface Fa0/1 only."
+      },
+      {
+        "id": "C",
+        "text": "It cannot send packets to 10.10.13.128/25"
+      },
+      {
+        "id": "D",
+        "text": "It load-balances traffic out of Fa0/1 and Fa0/2"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q155",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q155.png",
+    "questionEn": "QUESTION 155: Refer to the exhibit.To which device does Router 1 send packets that are destined to host 10.10.13.165?",
+    "questionZh": "請參閱圖表。路由器 1 將發往主機 10.10.13.165 的封包發送到哪個設備？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Router2"
+      },
+      {
+        "id": "B",
+        "text": "Router3"
+      },
+      {
+        "id": "C",
+        "text": "Router4"
+      },
+      {
+        "id": "D",
+        "text": "Router5"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q123",
+    "unit": "final",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q123.png",
+    "questionEn": "QUESTION 123: Refer to the exhibit. The New York router is configured with static routes pointing to the Atlanta and Washington sites. Which two tasks must be performed so that the Serial0/0/0 interfaces on the Atlanta and Washington routers can reach one another? (Choose two.)",
+    "questionZh": "請參⾒圖⽰。 紐約路由器配置了指向亞特蘭⼤和華盛頓站點的靜態路由。 為了使亞特蘭⼤和華盛頓路由器上的Serial0/0/0介⾯能夠相互訪問，必須執⾏哪兩項任務？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Configure the ipv6 route 2012::/126 2023::1 command on the Washington router"
+      },
+      {
+        "id": "B",
+        "text": "Configure the ipv6 route 2023::/126 2012::1 command on the Atlanta router."
+      },
+      {
+        "id": "C",
+        "text": "Configure the Ipv6 route 2012::/126 s0/0/0 command on the Atlanta router"
+      },
+      {
+        "id": "D",
+        "text": "Configure the ipv6 route 2023::/126 2012::2 command on the Atlanta router"
+      },
+      {
+        "id": "E",
+        "text": "Configure the ipv6 route 2012::/126 2023::2 command on the Washington router"
+      }
+    ],
+    "correctAnswers": [
+      "D",
+      "E"
+    ]
+  },
+  {
+    "id": "Q129",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q129.png",
+    "questionEn": "QUESTION 129: Refer to the exhibit. Which type of route does R1 use to reach host 10.10.13.10/32?",
+    "questionZh": "請參⾒圖⽰。 R1使⽤哪種路由到達主機10.10.13.10/32？",
+    "options": [
+      {
+        "id": "A",
+        "text": "default route"
+      },
+      {
+        "id": "B",
+        "text": "network route"
+      },
+      {
+        "id": "C",
+        "text": "host route"
+      },
+      {
+        "id": "D",
+        "text": "floating static route"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q130",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q130.png",
+    "questionEn": "QUESTION 130: Refer to the exhibit. which route type is configured to reach the internet?",
+    "questionZh": "請參⾒圖⽰。 哪種路由類型配置為可以訪問網際網路？",
+    "options": [
+      {
+        "id": "A",
+        "text": "network route"
+      },
+      {
+        "id": "B",
+        "text": "floating static route"
+      },
+      {
+        "id": "C",
+        "text": "host route"
+      },
+      {
+        "id": "D",
+        "text": "default route"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q143",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q143.png",
+    "questionEn": "QUESTION 143: Refer to the exhibit. Which path is used by the router for internet traffic ?",
+    "questionZh": "請參⾒圖⽰。 路由器使⽤哪個路徑進⾏網際網路流量？",
+    "options": [
+      {
+        "id": "A",
+        "text": "209.165.200.0/27"
+      },
+      {
+        "id": "B",
+        "text": "10.10.10.0/28"
+      },
+      {
+        "id": "C",
+        "text": "0.0.0.0/0"
+      },
+      {
+        "id": "D",
+        "text": "10.10.13.0/24"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q169",
+    "unit": "final",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q169.png",
+    "questionEn": "QUESTION 169: Refer to the exhibit. The loopback 1 interface of the Atlanta router must reach the loopback 3 interface of theWashington router. Which two static host routes must be configured on the New York router?(choose two)",
+    "questionZh": "請參⾒圖⽰。 亞特蘭⼤路由器的環回1介⾯必須到達華盛頓路由器的環回3介⾯。 紐約路由器上必須配置哪些兩條靜態主機路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 route 2000::1/128 2012::2"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 route 2000::3/128 2023::3"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 route 2000::3/128 s0/0/0"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 route 2000::1/128 s0/0/1"
+      },
+      {
+        "id": "E",
+        "text": "ipv6 route 2000::1/128 2012::1"
+      }
+    ],
+    "correctAnswers": [
+      "B",
+      "E"
+    ]
+  },
+  {
+    "id": "Q170",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q170.png",
+    "questionEn": "QUESTION 170: Refer to the exhibit. A packet is being sent across router R1 to host 172.16.3.14. To which destination does the routersend the packet?",
+    "questionZh": "請參⾒圖⽰。 封包通過路由器R1發送到主機172.16.3.14。 路由器將封包發送到哪個⽬的地？",
+    "options": [
+      {
+        "id": "A",
+        "text": "209.165.200.246 via Serial0/1/0"
+      },
+      {
+        "id": "B",
+        "text": "209.165.200.254 via Serial0/0/0"
+      },
+      {
+        "id": "C",
+        "text": "209.165 200.254 via Serial0/0/1"
+      },
+      {
+        "id": "D",
+        "text": "209.165.200.250 via Serial0/0/0"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q338",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q338.png",
+    "questionEn": "QUESTION 338: Refer to the exhibit. What is the metric of the route to the 192.168.10.33/28 subnet?",
+    "questionZh": "請參⾒圖⽰。 到 192.168.10.33/28 ⼦網的路由的度量(metric)是多少？",
+    "options": [
+      {
+        "id": "A",
+        "text": "84"
+      },
+      {
+        "id": "B",
+        "text": "110"
+      },
+      {
+        "id": "C",
+        "text": "128"
+      },
+      {
+        "id": "D",
+        "text": "192"
+      },
+      {
+        "id": "E",
+        "text": "193"
+      }
+    ],
+    "correctAnswers": [
+      "E"
+    ]
+  },
+  {
+    "id": "Q379",
+    "unit": "final",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q379.png",
+    "questionEn": "QUESTION 379: Refer to the exhibit. Which two commands, when configured on router R1, fulfill these requirements? (Choose two.) Packets towards the entire network 2001:db8:2::/64 must be forwarded through router R2. Packets toward host 2001:db8:23::14 preferably must be forwarded through R3.",
+    "questionZh": "請參⾒圖⽰。 當在路由器 R1 上配置時，哪兩條命令滿⾜這些要求？\n發往整個網絡 2001:db8:2::/64 的封包必須通過路由器 R2 轉發。\n發往主機 2001:db8:23::14 的封包最好必須通過 R3 轉發。",
+    "options": [
+      {
+        "id": "A",
+        "text": "Ipv6 route 2001:db8:23::/128 fd00:12::2"
+      },
+      {
+        "id": "B",
+        "text": "Ipv6 route 2001:db8:23::14/128 fd00:13::3"
+      },
+      {
+        "id": "C",
+        "text": "Ipv6 route 2001:db8:23::14/64 fd00:12::2"
+      },
+      {
+        "id": "D",
+        "text": "Ipv6 route 2001:db8:23::/64 fd00:12::2"
+      },
+      {
+        "id": "E",
+        "text": "Ipv6 route 2001:db8:23::14/64 fd00:12::2 200"
+      }
+    ],
+    "correctAnswers": [
+      "B",
+      "D"
+    ]
+  },
+  {
+    "id": "Q434",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q434.png",
+    "questionEn": "QUESTION 434: Refer to the exhibit.A network engineer must configure R1 so that it sends all packets destined to the 10.0.0.0/24 network to R3, and all packets destined to PC1 to R2,which configuration must the engineer implement ?",
+    "questionZh": "請參閱圖表。網路⼯程師必須配置 R1，以便將所有發往 10.0.0.0/24 網路的封包發送到 R3，並將所有發往 PC1 的封包發送到 R2，⼯程師必須實施哪種配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.255.0 192.168.0.2\nR1(config)#ip route 10.0.0.5 255.255.255.255 172.16.0.2"
+      },
+      {
+        "id": "B",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.0.0 172.16.0.2\nR1(config)#ip route 10.0.0.5 255.255.255.255 192.168.0.2"
+      },
+      {
+        "id": "C",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.0.0 192.168.0.2\nR1(config)#ip route 10.0.0.0 255.255.255.0 172.16.0.2"
+      },
+      {
+        "id": "D",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.255.0 172.16.0.2\nR1(config)#ip route 10.0.0.5 255.255.255.255 192.168.0.2"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q436",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q436.png",
+    "questionEn": "QUESTION 436: Refer to the exhibit. A network engineer is in the process of establishing IP connectivity between two sites. Routers R1 and R2 are partially configured with IP addressing. Both routers have the ability to access devices on their respective LANs. Which command set configures the IP connectivity between devices located on both LANs in each site?",
+    "questionZh": "請參⾒圖⽰。 網路⼯程師正在兩個站點之間建立 IP 連接。 路由器 R1 和 R2 部分配置了 IP 位址。 兩個路由器都能夠訪問各⾃ LAN 上的設備。 哪個命令集配置位於每個站點的兩個 LAN 上的設備之間的 IP 連接？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1\nip route 192.168.1.0 255.255.255.0 Gigabitethernet0/0\nR2\nip route 10.1.1.1 255.255.255.0 Gigabitethernet0/0"
+      },
+      {
+        "id": "B",
+        "text": "R1\nip route 0.0.0.0 0.0.0.0 209.165.200.225\nR2\nip route 0.0.0.0 0.0.0.0 209.165.200.226"
+      },
+      {
+        "id": "C",
+        "text": "R1\nip route 192.168.1.1 255.255.255.0 Gigabitethernet0/1\nR2\nip route 10.1.1.1 255.255.255.0 Gigabitethernet0/1"
+      },
+      {
+        "id": "D",
+        "text": "R1\nip route 0.0.0.0 0.0.0.0 209.165.200.226\nR2\nip route 0.0.0.0 0.0.0.0 209.165.200.225"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q469",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q469.png",
+    "questionEn": "QUESTION 469: Refer to the exhibit. Traffic sourced from the loopback0 Interface is trying to connect via ssh to the host at 10.0.1.15. What Is the next hop to the destination address? R1# show ip route Codes: C-connected, S-static,I-IGRP，R-RIP. M - mobile，B-BGP D-EIGRP， EX-EICRP external, O-OSPF, IA -OSPF inter area N1-OSPF NSSA external type 1, N2-OSPF NSSA externa1 type 2 E1-OSPF external type 1，E2-OSPF external type 2，E-EGP 1 - IS-IS，L1-IS-IS leve1-1，I2-IS-IS leve1-2，*- candidate default U - per-user static route,O-ODR Gateway of last resort is not set C 192.168.3.5 is directly connected, Loopback0 10.0.0.0/8 is variably subnetted, 4 subnets, 2 masks O 10.0.1.3/32[110/100] via 192 .168.0.40，00:39:08， Seria10 C 10.0.1.0/24 is directly connected, Serial0 O 10.0.1.190/32[110/5] via 192. 168.0.35，00:39:08， Serial0 O 10.0.1.0/24 [110/10] via 192. 168.0.4，00:39:08，Gigabit Ethernet 0/0 D 10.0.1.0/128 [90/10] via 192. 168.0.7，00:39:08，Gigabit Ethernet 0/0",
+    "questionZh": "請參⾒圖⽰。 來⾃ loopback0 介⾯的流量正在嘗試通過 ssh 連接到位於 10.0.1.15 的主機。 到⽬的地址的next hop是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "192.168.0.7"
+      },
+      {
+        "id": "B",
+        "text": "192.168.0.4"
+      },
+      {
+        "id": "C",
+        "text": "192.168.0.40"
+      },
+      {
+        "id": "D",
+        "text": "192.168.3.5"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q489",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q489.png",
+    "questionEn": "QUESTION 489: Refer to the exhibit. A static route must be configured on R14 to forward traffic for the 172. 21.34.0/25 network that resides on R86 Which command must be used to fulfill the request?",
+    "questionZh": "請參⾒圖⽰。 必須在 R14 上配置靜態路由以轉發駐留在 R86 上的 172. 21.34.0/25 網路的流量 必須使⽤哪個命令來完成請求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ip route 172.21.34.0 255.255.255.192 10.73.65.65"
+      },
+      {
+        "id": "B",
+        "text": "ip route 172.21.34.0 255.255.255.0 10.73.65.65"
+      },
+      {
+        "id": "C",
+        "text": "ip route 172.21.34.0 255.255.128.0 10.73.65.64"
+      },
+      {
+        "id": "D",
+        "text": "ip route 172.21.34.0 255.255.255.128 10.73.65.66"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q497",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q497.png",
+    "questionEn": "QUESTION 497: Refer to the exhibit. Which next-hop IP address does Routed use for packets destined to host 10 10.13.158?",
+    "questionZh": "請參⾒圖⽰。 Routed 將哪個下⼀跳 IP 地址⽤於發往主機 10 10.13.158 的封包？",
+    "options": [
+      {
+        "id": "A",
+        "text": "10.10.10.5"
+      },
+      {
+        "id": "B",
+        "text": "10.10.11.2"
+      },
+      {
+        "id": "C",
+        "text": "10.10.12.2"
+      },
+      {
+        "id": "D",
+        "text": "10.10.10.9"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q502",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q502.png",
+    "questionEn": "QUESTION 502: Refer to the exhibit. Web traffic is coming in from the WAN interface. Which route takes precedence when the router is processing traffic destined for the LAN network at 10.0.10.0/24?",
+    "questionZh": "請參⾒圖⽰。 Web 流量來⾃ WAN 介⾯。 當路由器處理發往位於 10.0.10.0/24 的 LAN 網路的流量時，哪條路由優先？",
+    "options": [
+      {
+        "id": "A",
+        "text": "via next-hop 10.0.1.5"
+      },
+      {
+        "id": "B",
+        "text": "via next-hop 10 0 1.4"
+      },
+      {
+        "id": "C",
+        "text": "via next-hop 10.0 1.50"
+      },
+      {
+        "id": "D",
+        "text": "via next-hop 10.0 1 100"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q504",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q504.png",
+    "questionEn": "QUESTION 504: Refer to the exhibit. An engineer is updating the R1 configuration to connect a new server to the management network. The PCs on the management network must be blocked from pinging the default gateway of the new server. Which command must be configured on R1 to complete the task?",
+    "questionZh": "請參⾒圖⽰。 ⼯程師正在更新 R1 配置以將新服務器連接到管理網路。 必須阻⽌管理網路上的 PC ping 新服務器的預設閘道。 必須在 R1 上配置哪個命令才能完成任務？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1(config)#ip route 172.16.2.2 255.255.255.248 gi0/1"
+      },
+      {
+        "id": "B",
+        "text": "R1(config)#ip route 172.16.2.2 255.255.255.255 gi0/0"
+      },
+      {
+        "id": "C",
+        "text": "R1(config)#ip route 172.16.2.0 255.255.255.0 192.168.1.15"
+      },
+      {
+        "id": "D",
+        "text": "R1(conflg)#ip route 172.16.2.0 255.255.255.0 192.168.1.5"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q545",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q545.png",
+    "questionEn": "QUESTION 545: Refer to the exhibit. A network engineer must configure R1 so that it sends all packets destined to the 10.0.0.0/24 network to R3, and all packets destined to PC1 to R2. Which configuration must the engineer implement?",
+    "questionZh": "請參⾒圖⽰。 網路⼯程師必須配置 R1，使其將所有發往 10.0.0.0/24 網路的封包發送到 R3，並將所有發往 PC1 的封包發送到 R2。 ⼯程師必須實施哪種配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.255.0 192.168.0.2\nR1(config)#ip route 10.0.0.5 255.255.255.255 172.16.0.2"
+      },
+      {
+        "id": "B",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.0.0 192.168.0.2\nR1(config)#ip route 10.0.0.0 255.255.255.0 172.16.0.2"
+      },
+      {
+        "id": "C",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.255.0 172.16.0.2\nR1(config)#ip route 10.0.0.5 255.255.255.255 192.168.0.2"
+      },
+      {
+        "id": "D",
+        "text": "R1(config)#ip route 10.0.0.0 255.255.0.0 172.16.0.2\nR1(config)#ip route 10.0.0.5 255.255.255.255 192.168.0.2"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q19",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q19.png",
+    "questionEn": "QUESTION 19: R1 has learned route 10.10.10.0/24 via numerous routing protocols, which route is installed?",
+    "questionZh": "R1已通過多種路由協定學習了路由10.10.10.0/24，安裝了哪個路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "route with the lowest cost"
+      },
+      {
+        "id": "B",
+        "text": "route with the shortest prefix length"
+      },
+      {
+        "id": "C",
+        "text": "route with the next hop that has the highest IP"
+      },
+      {
+        "id": "D",
+        "text": "route with the lowest administrative distance"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q21",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q21.png",
+    "questionEn": "QUESTION 21: Which attribute does a router use to select the best path when two or more different routes to the same destination exist from two different routing protocols?",
+    "questionZh": "當從兩個不同的路由協定存在到同⼀⽬的地的兩個或多個不同的路由時，路由器將使⽤哪個屬性選擇最佳路徑？",
+    "options": [
+      {
+        "id": "A",
+        "text": "dual algorithm"
+      },
+      {
+        "id": "B",
+        "text": "metric"
+      },
+      {
+        "id": "C",
+        "text": "administrative distance"
+      },
+      {
+        "id": "D",
+        "text": "hop count"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q23",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q23.png",
+    "questionEn": "QUESTION 23: When OSPF learns multiple paths to a network, how does it select a route?",
+    "questionZh": "當 OSPF 學習到⼀個網路的多條路徑時，它如何選擇路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "It multiple the active K value by 256 to calculate the route with the lowest metric."
+      },
+      {
+        "id": "B",
+        "text": "For each existing interface, it adds the metric from the source router to the destination to calculate the route with\nthe lowest bandwidth."
+      },
+      {
+        "id": "C",
+        "text": "It divides a reference bandwidth of 100 Mbps by the actual bandwidth of the existing interface to calculate the\nrouter with the lowest cost."
+      },
+      {
+        "id": "D",
+        "text": "It count the umber of hops between the source router and the destination to determine the router with the lowest\nmetric"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q29",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q29.png",
+    "questionEn": "QUESTION 29: Refer to the exhibit.Router R1 is running three different routing protocols.Which route characteristic is used by the router to forward the packet that receives for destination IP 172.16.32.1?",
+    "questionZh": "請參閱圖表。路由器 R1 正在運⾏三種不同的路由協定。路由器使⽤哪個路由特性來轉發接收到的⽬標 IP 172.16.32.1 的封包？",
+    "options": [
+      {
+        "id": "A",
+        "text": "metric"
+      },
+      {
+        "id": "B",
+        "text": "longest prefix"
+      },
+      {
+        "id": "C",
+        "text": "cost"
+      },
+      {
+        "id": "D",
+        "text": "administrative distance"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q32",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q32.png",
+    "questionEn": "QUESTION 32: Router R1 must send all traffic without a matching routing-table entry to 192.168.1.1.which configuration accomplishes this task?",
+    "questionZh": "路由器 R1 必須將所有沒有匹配路由表項⽬的流量發送到 192.168.1.1。哪種配置可以完成此任務？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1# config t\nR1(config)# ip routing\nR1(config)# ip route default-route 192.168.1.1"
+      },
+      {
+        "id": "B",
+        "text": "R1# config t\nR1(config)# ip routing\nR1(config)# ip route 0.0.0.0 0.0.0.0 192.168.1.1"
+      },
+      {
+        "id": "C",
+        "text": "R1# config t\nR1(config)# ip routing\nR1(config)# ip route 192.168.1.1 0.0.0.0 0.0.0.0"
+      },
+      {
+        "id": "D",
+        "text": "R1# config t\nR1(config)# ip routing\nR1(config)# ip default-gateway 192.168.1.1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q39",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q39.png",
+    "questionEn": "QUESTION 39: Refer to the exhibit. How does router R1 handle traffic to 192.168.10.16?",
+    "questionZh": "請參閱圖表。路由器 R1 如何處理到 192.168.10.16 的流量？",
+    "options": [
+      {
+        "id": "A",
+        "text": "It selects the EIGRP route because it has the lowest administrative distance"
+      },
+      {
+        "id": "B",
+        "text": "It selects the RIP route because it has the longest prefix inclusive of the destination address"
+      },
+      {
+        "id": "C",
+        "text": "It selects the OSFP route because it has the lowest cost"
+      },
+      {
+        "id": "D",
+        "text": "It selects the IS-IS route because it has the shortest prefix inclusive of the destination address"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q44",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q44.png",
+    "questionEn": "QUESTION 44: Refer to the exhibit. How does the router manage traffic to 192.168.12.16?",
+    "questionZh": "請參⾒圖⽰。 路由器如何管理到 192.168.12.16 的流量？",
+    "options": [
+      {
+        "id": "A",
+        "text": "It selects RIP route because it has the longest prefix inclusive of the destination address"
+      },
+      {
+        "id": "B",
+        "text": "It chooses the EIGRP route because it has the lowest administrative distance"
+      },
+      {
+        "id": "C",
+        "text": "It load-balances traffic between all three routes"
+      },
+      {
+        "id": "D",
+        "text": "It chooses the OSPF route because it has the longest prefix inclusive of the destination address"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q58",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q58.png",
+    "questionEn": "QUESTION 58: Refer to the exhibit. Which route does R1 select for traffic that is destined to 192 168.16.2?",
+    "questionZh": "請參⾒圖⽰。 R1 為發往 192 168.16.2 的流量選擇哪條路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "192.168.16.0/21"
+      },
+      {
+        "id": "B",
+        "text": "192.168.16.0/24"
+      },
+      {
+        "id": "C",
+        "text": "192.168 26.0/26"
+      },
+      {
+        "id": "D",
+        "text": "192.168.16.0/27"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q70",
+    "unit": "final",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q70.png",
+    "questionEn": "QUESTION 70: Refer to the exhibit. A router received these five routes form different routing information sources.which two routes dose the router install in the routing table? (choose two)",
+    "questionZh": "參考圖⽰。路由器收到這5條路由形成不同的路由信息源。路由器安裝了哪兩條路由在路由表中？",
+    "options": [
+      {
+        "id": "A",
+        "text": "iBGP route 10.0.0.0/30"
+      },
+      {
+        "id": "B",
+        "text": "RIP route 10.0.0.0/30"
+      },
+      {
+        "id": "C",
+        "text": "EIGRP route 10.0.0.1/32"
+      },
+      {
+        "id": "D",
+        "text": "OSPF route 10.0.0.0/30"
+      },
+      {
+        "id": "E",
+        "text": "OSPF route 10.0.0.0/16"
+      }
+    ],
+    "correctAnswers": [
+      "C",
+      "E"
+    ]
+  },
+  {
+    "id": "Q117",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q117.png",
+    "questionEn": "QUESTION 117: R1 has learned route 192.168.12.0/24 via IS-IS, OSPF, RIP and Internal EIGRP Under normal operating conditions,which routing protocol is installed in the routing table?",
+    "questionZh": "R1 已經通過 IS-IS、OSPF、RIP 和內部 EIGRP 學習到路由 192.168.12.0/24 在正常運⾏情況下，路由表中安裝了哪種路由協定？",
+    "options": [
+      {
+        "id": "A",
+        "text": "IS-IS"
+      },
+      {
+        "id": "B",
+        "text": "RIP"
+      },
+      {
+        "id": "C",
+        "text": "Internal EIGRP"
+      },
+      {
+        "id": "D",
+        "text": "OSPF"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q131",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q131.png",
+    "questionEn": "QUESTION 131: Router A learns the same route from two different neighbors, one of the neighbor routers is an OSPF neighbor and the other is an EIGRP neighbor.What is the administrative distance of the route that will be installed in the routing table?",
+    "questionZh": "路由器 A 從兩個不同的鄰居處學習到相同的路由，其中⼀個鄰居路由器是 OSPF 鄰居，另⼀個是 EIGRP 鄰居。將安裝在路由表中的路由的管理距離(AD)是多少？",
+    "options": [
+      {
+        "id": "A",
+        "text": "20"
+      },
+      {
+        "id": "B",
+        "text": "90"
+      },
+      {
+        "id": "C",
+        "text": "110"
+      },
+      {
+        "id": "D",
+        "text": "115"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q187",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q187.png",
+    "questionEn": "QUESTION 187: Router R2 is configured with multiple routes to reach network 10 1.1.0/24 from router R1. What protocol is chosen by router R2 to reach the destination network 10.1.1.0/24?",
+    "questionZh": "路由器R2配置了多種路由協定，以從路由器R1到達網路10.1.1.0 24。 路由器R2選擇了哪種協定才能到達⽬標網路 10.1.1.0/24？",
+    "options": [
+      {
+        "id": "A",
+        "text": "eBGP"
+      },
+      {
+        "id": "B",
+        "text": "static"
+      },
+      {
+        "id": "C",
+        "text": "OSPF"
+      },
+      {
+        "id": "D",
+        "text": "EIGRP"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q202",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q202.png",
+    "questionEn": "QUESTION 202: Refer to the exhibit. Which route type does the routing protocol Code D represent in the output?",
+    "questionZh": "請參⾒圖⽰。 輸出中的路由協定代碼D代表哪種路由類型？",
+    "options": [
+      {
+        "id": "A",
+        "text": "internal BGP route"
+      },
+      {
+        "id": "B",
+        "text": "/24 route of a locally configured IP"
+      },
+      {
+        "id": "C",
+        "text": "statically assigned route"
+      },
+      {
+        "id": "D",
+        "text": "route learned through EIGRP"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q574",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q574.png",
+    "questionEn": "QUESTION 574: Refer to the exhibit. Which interface is chosen to forward traffic to the host at 192.168.0.55?",
+    "questionZh": "根據上圖所示，哪一個接口會被選擇來轉送流量到主機192.168.0.55？",
+    "options": [
+      {
+        "id": "A",
+        "text": "GigabitEthernet0/2"
+      },
+      {
+        "id": "B",
+        "text": "GigabitEthernet0/1"
+      },
+      {
+        "id": "C",
+        "text": "GigabitEthernet0/3"
+      },
+      {
+        "id": "D",
+        "text": "Null0"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q590",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q590.png",
+    "questionEn": "QUESTION 590: Refer to the exhibit. A packet that is sourced from 172.16.3.254 is destined for the IP address of GigabitEthernet0/0/0. What is the subnet mask of the destination route?",
+    "questionZh": "參考圖示。一個從 IP 位址 172.16.3.254 發出的封包，其目標為 GigabitEthernet0/0/0 的 IP 位址。目標路由的子網路遮罩為何？",
+    "options": [
+      {
+        "id": "A",
+        "text": "0.0.0.0"
+      },
+      {
+        "id": "B",
+        "text": "255.255.254.0"
+      },
+      {
+        "id": "C",
+        "text": "255.255.255.0"
+      },
+      {
+        "id": "D",
+        "text": "255.255.255.255"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q591",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q591.png",
+    "questionEn": "QUESTION 591: Refer to the exhibit. When router R1 is sending traffic to IP address 10.56.192.1 which interface or next hop address does it use to route the packet?",
+    "questionZh": "參考圖示。當路由器 R1 傳送流量到 IP 位址10.56.192.1時，它會使用哪一個介面或下一跳位址來路由該封包？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Vlan57"
+      },
+      {
+        "id": "B",
+        "text": "10.56.0.1"
+      },
+      {
+        "id": "C",
+        "text": "0.0.0.0/0"
+      },
+      {
+        "id": "D",
+        "text": "10.56.128.19"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q592",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q592.png",
+    "questionEn": "QUESTION 592: Refer to the exhibit. Packets are flowing from 192.168.10.1 to the destination at IP address 192.168.20.75. Which next hop will the router select for the packet?",
+    "questionZh": "參考圖示。封包從 IP 位址 192.168.10.1 流向目標 IP 位址 192.168.20.75。路由器會為該封包選擇哪一個下一跳？",
+    "options": [
+      {
+        "id": "A",
+        "text": "10.10.10.1"
+      },
+      {
+        "id": "B",
+        "text": "10.10.10.11"
+      },
+      {
+        "id": "C",
+        "text": "10.10.10.12"
+      },
+      {
+        "id": "D",
+        "text": "10.10.10.14"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  }
+,
+
+  {
+    "id": "Q13",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q13.png",
+    "questionEn": "QUESTION 13: what is the expected outcome when an EUI-64 address is generated?",
+    "questionZh": "當EUI-64地址生成時，可以預期的結果是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The seventh bit of original MAC address of the interface is inverted"
+      },
+      {
+        "id": "B",
+        "text": "The interface ID is configured as a random 64-bit value"
+      },
+      {
+        "id": "C",
+        "text": "The characters FE80 are inserted at the beginning of the MAC address of the interface"
+      },
+      {
+        "id": "D",
+        "text": "The MAC address of the interface is used as the interface ID without modification"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q26",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q26.png",
+    "questionEn": "QUESTION 26: Which action must be taken to assign a global unicast IPv6 address on an interface that is derived from the MAC address of that interface?",
+    "questionZh": "必須採取哪些操作才能在從該介面的 MAC 地址派生的介面上分配全局單播 IPv6 地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "explicitly assign a link-local address"
+      },
+      {
+        "id": "B",
+        "text": "disable the EUI-64 bit process"
+      },
+      {
+        "id": "C",
+        "text": "enable SLAAC on an interface"
+      },
+      {
+        "id": "D",
+        "text": "configure a stateful DHCPv6 server on the network"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q64",
+    "unit": "chapter8",
+    "type": "multiple",
+    "hasImage": false,
+    "imageUrl": "Images/Q64.png",
+    "questionEn": "QUESTION 64: when configuring IPv6 on an interafce, which two IPv6 multicast groups are joined? (choose two)",
+    "questionZh": "在介面上配置IPv6時，加入哪兩個IPv6組播組？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2000::/3"
+      },
+      {
+        "id": "B",
+        "text": "2000::5"
+      },
+      {
+        "id": "C",
+        "text": "FC00::/7"
+      },
+      {
+        "id": "D",
+        "text": "FF02::1"
+      },
+      {
+        "id": "E",
+        "text": "FF02::2"
+      }
+    ],
+    "correctAnswers": [
+      "D",
+      "E"
+    ]
+  },
+  {
+    "id": "Q78",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q78.png",
+    "questionEn": "QUESTION 78: which IPv6 address type provides communication between subnets and cannot route on the internet?",
+    "questionZh": "哪種 IPv6 地址類型提供子網之間的通信並且無法在 Internet 上路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "link-local"
+      },
+      {
+        "id": "B",
+        "text": "unique local"
+      },
+      {
+        "id": "C",
+        "text": "multicast"
+      },
+      {
+        "id": "D",
+        "text": "global unicast"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q95",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q95.png",
+    "questionEn": "QUESTION 95: which IPv6 address block sends packets to a group address rather than a single address ?",
+    "questionZh": "哪個 IPv6 地址區塊將封包發送到群組地址而不是單個地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2000::/3"
+      },
+      {
+        "id": "B",
+        "text": "FC00::/7"
+      },
+      {
+        "id": "C",
+        "text": "FE80::/10"
+      },
+      {
+        "id": "D",
+        "text": "FF00::/8"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q101",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q101.png",
+    "questionEn": "QUESTION 101: which command automatically generates an IPv6 address from a specified IPv6 prefix and MAC address of an interface?",
+    "questionZh": "哪個命令會根據介面的指定 IPv6 前置碼和 MAC 地址自動生成 IPv6 地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address dhcp"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:DB8:5:112::/64 eui-64"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address autoconfig"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001:DB8:5:112::2/64 link-local"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q140",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q140.png",
+    "questionEn": "QUESTION 140: which IPv6 address block forwards packets to a multicast address rather than a unicast address?",
+    "questionZh": "哪個 IPv6 地址區塊將封包轉發到群播地址而不是單播地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2000::/3"
+      },
+      {
+        "id": "B",
+        "text": "FC00::/7"
+      },
+      {
+        "id": "C",
+        "text": "FE80::/10"
+      },
+      {
+        "id": "D",
+        "text": "FF00::/12"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q149",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q149.png",
+    "questionEn": "QUESTION 149: which type of IPv6 address is publicly routable in the same way as IPv4 public address?",
+    "questionZh": "哪種類型的 IPv6 地址可以以與 IPv4 公共地址相同的方式公開路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "global unicast"
+      },
+      {
+        "id": "B",
+        "text": "link-local"
+      },
+      {
+        "id": "C",
+        "text": "unique local"
+      },
+      {
+        "id": "D",
+        "text": "multicast"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q330",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q330.png",
+    "questionEn": "QUESTION 330: A network engineer must configure the router R1 GigabitEthernet1/1 interface to connect to the router R2 GigabitEthernet1/1 interface. For the configuration to be applied the engineer must compress the address 2001:0db8:0000:0000:0500:000a:400F:583B. Which command must be issued on the interface?",
+    "questionZh": "網路工程師必須配置路由器 R1 GigabitEthernet1/1 介面才能連接到路由器 R2 GigabitEthernet1/1 介面。 對於要應用的配置，工程師必須簡化地址 2001:0db8:0000:0000:0500:000a:400F:583B。 必須在介面上發出哪個命令？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 2001:0db8::5: a: 4F 583B"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:db8::500:a:400F:583B"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address 2001 db8:0::500:a:4F:583B"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001::db8:0000::500:a:400F:583B"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q360",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q360.png",
+    "questionEn": "QUESTION 360: An engineer must configure the IPv6 address 2001:0db8:0000:0000:0700:0003:400F:572B on the serial0/0 interface of the HQ router and wants to compress it for easier configuration. Which command must be issued on the router interface?",
+    "questionZh": "某工程師需要在總部路由器的serial0/0介面上配置IPv6地址2001:0db8:0000:0000:0700:0003:400F:572B，想對其進行簡化以方便配置。 必須在路由器介面上發出哪個命令？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 2001:db8::700:3:400F:572B"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:db8:0::700:3:4F:572B"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address 2001:0db8::7:3:4F:572B"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001::db8:0000::700:3:400F:572B"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q379",
+    "unit": "chapter8",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q379.png",
+    "questionEn": "QUESTION 379: Packets towards the entire network 2001:db8:2::/64 must be forwarded through router R2. Packets toward host 2001:db8:23::14 preferably must be forwarded through R3.  (Choose two.)",
+    "questionZh": "發往整個網路 2001:db8:2::/64 的封包必須通過路由器 R2 轉發。 發往主機 2001:db8:23::14 的封包最好必須通過 R3 轉發。",
+    "options": [
+      {
+        "id": "A",
+        "text": "Ipv6 route 2001:db8:23::/128 fd00:12::2"
+      },
+      {
+        "id": "B",
+        "text": "Ipv6 route 2001:db8:23::14/128 fd00:13::3"
+      },
+      {
+        "id": "C",
+        "text": "Ipv6 route 2001:db8:23::14/64 fd00:12::2"
+      },
+      {
+        "id": "D",
+        "text": "Ipv6 route 2001:db8:23::/64 fd00:12::2"
+      },
+      {
+        "id": "E",
+        "text": "Ipv6 route 2001:db8:23::14/64 fd00:12::2 200"
+      }
+    ],
+    "correctAnswers": [
+      "B",
+      "D"
+    ]
+  },
+  {
+    "id": "Q425",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q425.png",
+    "questionEn": "QUESTION 425: Refer to the exhibit An engineer is configuring the HO router Which IPv6 address configuration must be applied to the router fa0/1 interface for the router to assign a unique 64-bit IPv6 address to itself?",
+    "questionZh": "請參考圖表， 一位工程師正在配置 HO 路由器 必須將以下 IPv6 地址配置應用於路由器 fa0/1 介面，路由器才能為其自身分配唯一的 64 位 IPv6 地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 2001 :DB8:0:1 :C601:42FE:800F:7/64"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001 :DB8:0:1 :FE80:C601:420F:7/64"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address2001 :DB8:0:1 :FFFF:C601:420F:7/64"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001 DB8.0:1 :C601:42FF:FE0F:7/64"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q439",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q439.png",
+    "questionEn": "QUESTION 439: Refer to the exhibit. Which IPv6 configuration is required for R17 to successfully ping the WAN interface on R18?",
+    "questionZh": "請參見圖示。 R17 需要哪種 IPv6 配置才能成功 ping R18 上的 WAN介面？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R17#\nno ip domain lookup\nip cef\ninterface FastEthernet0/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:3::201/64\ninterface FastEthernet1/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:2:201/64\nno cdp log mismatch duplex\nipv6 route 2001:DB8:4::/64 2001:DB8:5::101"
+      },
+      {
+        "id": "B",
+        "text": "R17#\nno ip domain lookup\nip cef\nipv6 unicast-routing\ninterface FastEthernet0/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:2::201/64\ninterface FastEthernet1/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:3::201/64\nno cdp log mismatch duplex\nipv6 route 2001:DB8:4::/64 2001:DB8:3::301"
+      },
+      {
+        "id": "C",
+        "text": "R17#\nno ip domain lookup\nip cef\nipv6 cef\ninterface FastEthernet0/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:2::201/64\ninterface FastEthernet1/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:3::201/64\nno cdp log mismatch duplex\nipv6 route 2001 :DB8:4::/64 2001:DB8:4::302"
+      },
+      {
+        "id": "D",
+        "text": "R17#\nno ip domain lookup\nip cef\nipv6 unicast-routing\ninterface FastEthernet0/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:2::201/64\ninterface FastEthernet1/0\nno ip address\nduplex auto\nspeed auto\nipv6 address 2001:DB8:3::201/64\nno cdp log mismatch duplex\nipv6 route 2001 :DB8:4::/64 2001:DB8:2::201"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q453",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q453.png",
+    "questionEn": "QUESTION 453: Which type of IPv6 address is similar to a unicast address but is assigned to multiple devices on the same network at the same time?",
+    "questionZh": "哪種類型的 IPv6 地址類似於單播地址，但同時分配給同一網絡中的多個設備？",
+    "options": [
+      {
+        "id": "A",
+        "text": "global unicast address"
+      },
+      {
+        "id": "B",
+        "text": "anycast address"
+      },
+      {
+        "id": "C",
+        "text": "multicast address"
+      },
+      {
+        "id": "D",
+        "text": "link-local address"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q464",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q464.png",
+    "questionEn": "QUESTION 464: What is the difference between IPv6 unicast and anycast addressing?",
+    "questionZh": "IPv6 單播和任播尋址有什麼區別？",
+    "options": [
+      {
+        "id": "A",
+        "text": "IPv6 anycast nodes must be explicitly configured to recognize the anycast address, but IPv6 unicast nodes require no special configuration"
+      },
+      {
+        "id": "B",
+        "text": "IPv6 unicast nodes must be explicitly configured to recognize the unicast address, but IPv6 anycast nodes require no special configuration"
+      },
+      {
+        "id": "C",
+        "text": "An individual IPv6 unicast address is supported on a single interface on one node but an IPv6 anycast address is assigned to a group of interfaces on multiple nodes."
+      },
+      {
+        "id": "D",
+        "text": "Unlike an IPv6 anycast address, an IPv6 unicast address is assigned to a group of interfaces on multiple nodes"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q474",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q474.png",
+    "questionEn": "QUESTION 474: A network engineer must implement an IPv6 configuration on the vlan 2000 interface to create a routable locally-unique unicast address that is blocked from being advertised to the internet. Which configuration must the engineer apply?",
+    "questionZh": "網絡工程師必須在 vlan 2000 介面上實施 IPv6 配置，以創建可路由的本地唯一單播地址，該地址被阻止發佈到 Internet。 工程師必須應用哪種配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "interface vlan 2000\nipv6 address ffc0:0000:aaaa::1234:2343/64"
+      },
+      {
+        "id": "B",
+        "text": "interface vlan 2000\nIpv6 address fc00:0000:aaaa:a15d:1234:2343:8aca/64"
+      },
+      {
+        "id": "C",
+        "text": "interface vlan 2000\nipv6 address fe80;0000:aaaa::1234:2343/64"
+      },
+      {
+        "id": "D",
+        "text": "interface vlan 2000\nipv6 address fd00::1234:2343/64"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q486",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q486.png",
+    "questionEn": "QUESTION 486: Refer to the exhibit. An engineer is configuring the HO router. Which IPv6 address configuration must be applied to the router fa0/1 interface for the router to assign a unique 64-brt IPv6 address to Itself?",
+    "questionZh": "請參見圖示。 工程師正在配置 HO 路由器。 哪個 IPv6 地址配置必須應用於路由器 fa0/1 介面，路由器才能為其自身分配唯一的 64-brt IPv6 地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 2001:DB8:0:1:C601:42FF:FE0F:7/64"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:DB8:0:1:C601:42FE:800F:7/64"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address 2001 :DB8:0:1:FFFF:C601:420F:7/64"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001 :DB8:0:1:FE80:C601:420F:7/64"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q488",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q488.png",
+    "questionEn": "QUESTION 488: A network administrator is setting up a new IPv6 network using the 64-bit address 2001:0EB8:00C1:2200:0001:0000:0000:0331/64 To simplify the configuration the administrator has decided to compress the address Which IP address must the administrator configure?",
+    "questionZh": "網絡管理員正在使用 64 位地址 2001:0EB8:00C1:2200:0001:0000:0000:0331/64 設置新的 IPv6 網絡 為了簡化配置，管理員決定壓縮地址 管理員必須配置哪個 IP 地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 21:EB8:C1:2200:1::331/64"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:EB8:C1:22:1::331/64"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address 2001:EB8:C1:2200:1::331-64"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001:EB8:C1:2200:1:0000:331/64"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q499",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q499.png",
+    "questionEn": "QUESTION 499: A network engineer is installing an IPv6-only capable device. The client has requested that the device IP address be reachable only from the internal network. Which type of IPv6 address must the engineer assign?",
+    "questionZh": "網絡工程師正在安裝僅支持 IPv6 的設備。 客戶端已請求只能從內部網絡訪問設備 IP 地址。 工程師必須分配哪種類型的 IPv6 地址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "unique local address"
+      },
+      {
+        "id": "B",
+        "text": "link-local address"
+      },
+      {
+        "id": "C",
+        "text": "aggregatable global address"
+      },
+      {
+        "id": "D",
+        "text": "IPv4-compatible IPv6 address"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q587",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q587.png",
+    "questionEn": "QUESTION 587: Refer to the exhibit. Which format matches the Modified EUI-64 IPv6 interface address for the network 2001:db8::/64?",
+    "questionZh": "參考圖示，以下哪一種格式符合網路 2001:db8::/64 的修改版 EUI-64 IPv6 介面位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8::5000:00ff:fe04:0000/64"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8::4332:5800:41ff:fe06:/64"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8::5000:0004:5678:0090/64"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8::5200:00ff:fe04:0000/64"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  }
+,
+
+  {
+    "id": "Q332",
+    "unit": "chapter8",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 332: Match the IPv6 address types to their characteristics.",
+    "questionZh": "將 IPv6 位址類型配對到它們的特徵。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "attached to a single subnet"
+      },
+      {
+        "id": "opt2",
+        "text": "addresses with prefix FC00::/7"
+      },
+      {
+        "id": "opt3",
+        "text": "configured only once per interface"
+      },
+      {
+        "id": "opt4",
+        "text": "addressing for exclusive use internally without Internet routing"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Link-Local Address 本地鏈路地址"
+      },
+      {
+        "id": "b2",
+        "text": "Unique Local Address 本地唯一地址"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt2": "b2",
+      "opt3": "b1",
+      "opt4": "b2"
+    }
+  },
+  {
+    "id": "Q532",
+    "unit": "chapter8",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 532: Match the IPv6 addresses to their types.",
+    "questionZh": "將 IPv6 地址配對到它們的類型。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "2001:db8:600d:cafe::123"
+      },
+      {
+        "id": "opt2",
+        "text": "3ffe:e54d:620:a87a::f00d"
+      },
+      {
+        "id": "opt3",
+        "text": "fcba:926a:e8e:7a25:b1:c6d2:1a76:8fdc"
+      },
+      {
+        "id": "opt4",
+        "text": "fd6d:c83b:5cef:b6b2::1"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Global Unicast"
+      },
+      {
+        "id": "b2",
+        "text": "Unique Local"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt2": "b1",
+      "opt3": "b2",
+      "opt4": "b2"
+    }
+  },
+  {
+    "id": "Q535",
+    "unit": "chapter8",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 535: Match the IPv6 address types to their definitions.",
+    "questionZh": "將 IPv6 位址類型配對到它們的定義。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "used exclusively by a non-host device"
+      },
+      {
+        "id": "opt2",
+        "text": "assigned to more than one interface"
+      },
+      {
+        "id": "opt3",
+        "text": "derived from the FF00::/8 address range"
+      },
+      {
+        "id": "opt4",
+        "text": "provides one-to-many communications"
+      },
+      {
+        "id": "opt5",
+        "text": "includes link-local and loopback addresses"
+      },
+      {
+        "id": "opt6",
+        "text": "identifies an interface on an IPv6 device"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Anycast"
+      },
+      {
+        "id": "b2",
+        "text": "Multicast"
+      },
+      {
+        "id": "b3",
+        "text": "Unicast"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt2": "b1",
+      "opt3": "b2",
+      "opt4": "b2",
+      "opt5": "b3",
+      "opt6": "b3"
+    }
+  },
+  {
+    "id": "Q539",
+    "unit": "chapter8",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 539: Match the IPv6 address types to their descriptions.",
+    "questionZh": "將 IPv6 位址類型配對到它們的描述。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "IPv6 addresses in the format FF02::5"
+      },
+      {
+        "id": "opt2",
+        "text": "IPv6 addresses that begin with FD"
+      },
+      {
+        "id": "opt3",
+        "text": "may be used by multiple organizations at the same time"
+      },
+      {
+        "id": "opt4",
+        "text": "private IPv6 addresses"
+      },
+      {
+        "id": "opt5",
+        "text": "serve as next-hop addresses"
+      },
+      {
+        "id": "opt6",
+        "text": "unable to serve as destination addresses"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Unique Local Address"
+      },
+      {
+        "id": "b2",
+        "text": "Link-local Addresses"
+      }
+    ],
+    "correctAnswers": {
+      "opt2": "b1",
+      "opt3": "b1",
+      "opt4": "b1",
+      "opt5": "b2",
+      "opt6": "b2"
+    }
+  }
+,
+
+  {
+    "id": "Q84",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q84.png",
+    "questionEn": "QUESTION 84: Refer to the exhibit. Which password must an engineer use to enter the enable mode?",
+    "questionZh": "請參見圖示。 工程師必須使用哪個密碼才能進入啟用模式？",
+    "options": [
+      {
+        "id": "A",
+        "text": "adminadmin123"
+      },
+      {
+        "id": "B",
+        "text": "default"
+      },
+      {
+        "id": "C",
+        "text": "testing 1234"
+      },
+      {
+        "id": "D",
+        "text": "cisco123"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q181",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q181.png",
+    "questionEn": "QUESTION 181: Refer to the exhibit. An engineer booted a new switch and applied this configuration via the console port. Which additional configuration must be applied to allow administrators to authenticate directly to enable privilege mode via Telnet using a local username and password?",
+    "questionZh": "請參見圖示。 一位工程師啟動了一台新交換機並通過控制台port 應用了此配置。 必須應用哪些附加配置才能允許管理員使用本地用戶名和密碼通過 Telnet 直接進行身份驗證以啟用特權模式？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1(config)#username admin\nR1(config-if)#line vty 0 4\nR1(config-line)#password p@ss1234"
+      },
+      {
+        "id": "B",
+        "text": "R1(config)#username admin\nR1(config-if)#line vty 0 4\nR1(config-line)#password p@ss1234\nR1(config-line)#transport input telnet"
+      },
+      {
+        "id": "C",
+        "text": "R1(config)#username admin secret p@ss1234\nR1(config-if)#line vty 0 4\nR1(config-line)#login local\nR1(config)#enable secret p@ss1234"
+      },
+      {
+        "id": "D",
+        "text": "R1(config)#username admin privilege 15 secret p@ss1234\nR1(config-if)#line vty 0 4\nR1(config-line)#login local"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q18",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q18.png",
+    "questionEn": "QUESTION 18: Which command prevents passwords from being stored in the configuration as plaintext on a router or switch?",
+    "questionZh": "哪個命令可以防止密碼以明文形式存儲在路由器或交換機的配置中？",
+    "options": [
+      {
+        "id": "A",
+        "text": "enable secret"
+      },
+      {
+        "id": "B",
+        "text": "service password-encryption"
+      },
+      {
+        "id": "C",
+        "text": "username Cisco password encrypt"
+      },
+      {
+        "id": "D",
+        "text": "enable password"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q151",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q151.png",
+    "questionEn": "QUESTION 151: The service password-encryption command is entered on a router. What is the effect of this configuration?",
+    "questionZh": "在路由器上輸入 service password-encryption 命令。 這個配置有什麼效果？",
+    "options": [
+      {
+        "id": "A",
+        "text": "restricts unauthorized users from viewing clear-text passwords in the running configuration"
+      },
+      {
+        "id": "B",
+        "text": "encrypts the password exchange when a VPN tunnel is established"
+      },
+      {
+        "id": "C",
+        "text": "prevents network administrators from configuring clear-text passwords"
+      },
+      {
+        "id": "D",
+        "text": "protects the VLAN database from unauthorized PC connections on the switch"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q369",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q369.png",
+    "questionEn": "QUESTION 369: Which global command encrypt all passwords in the running configuration?",
+    "questionZh": "哪個全局命令加密running config中的所有密碼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "password-encrypt"
+      },
+      {
+        "id": "B",
+        "text": "enable password-encryption"
+      },
+      {
+        "id": "C",
+        "text": "enable secret"
+      },
+      {
+        "id": "D",
+        "text": "service password-encryption"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q542",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q542.png",
+    "questionEn": "QUESTION 542: An engineer has configured the domain name, user name, and password on the local router. What is the next step to complete the configuration for a Secure Shell access RSA key?",
+    "questionZh": "工程師在本地路由器上配置了域名、用戶名和密碼。 完成SSH訪問 RSA 密鑰配置的下一步是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "crypto key zeroize rsa"
+      },
+      {
+        "id": "B",
+        "text": "crypto key pubkey-chain rsa"
+      },
+      {
+        "id": "C",
+        "text": "crypto key import rsa pem"
+      },
+      {
+        "id": "D",
+        "text": "crypto key generate rsa"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q233",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q233.png",
+    "questionEn": "QUESTION 233: ",
+    "questionZh": "What is a function of TFTP in network operations?  TFTP在網路操作中的作用是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "transfers a backup configuration file from a server to a switch using a username and password"
+      },
+      {
+        "id": "B",
+        "text": "transfers files between file systems on a router"
+      },
+      {
+        "id": "C",
+        "text": "transfers a configuration files from a server to a router on a congested link"
+      },
+      {
+        "id": "D",
+        "text": "transfers IOS images from a server to a router for firmware upgrades"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q30",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q30.png",
+    "questionEn": "QUESTION 30: Which configuration is needed to generate an RSA key for SSH on a router?",
+    "questionZh": "需要哪種配置才能在路由器上為SSH生成RSA密鑰？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Configure the version of SSH"
+      },
+      {
+        "id": "B",
+        "text": "Configure VTY access."
+      },
+      {
+        "id": "C",
+        "text": "Create a user with a password"
+      },
+      {
+        "id": "D",
+        "text": "Assign a DNS domain name"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q59",
+    "unit": "chapter4",
+    "type": "multiple",
+    "hasImage": false,
+    "imageUrl": "Images/Q59.png",
+    "questionEn": "QUESTION 59: Which two must be met before SSH can operate normally on a Cisco IOS switch? (Choose two)",
+    "questionZh": "在SSH可以在Cisco IOS交換機上正常運行之前，必須滿足以下哪兩個條件？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The switch must be running a k9 (crypto) IOS image"
+      },
+      {
+        "id": "B",
+        "text": "The ip domain-name command must be configured on the switch"
+      },
+      {
+        "id": "C",
+        "text": "IP routing must be enabled on the switch"
+      },
+      {
+        "id": "D",
+        "text": "A console password must be configured on the switch"
+      },
+      {
+        "id": "E",
+        "text": "Telnet must be disabled on the switch"
+      }
+    ],
+    "correctAnswers": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "id": "Q62",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q62.png",
+    "questionEn": "QUESTION 62: Refer to the exhibit. An administrator configures four switches for local authentication using passwords that are stored as a cryptographic hash.The four switches must also support SSH access for administrators to manage the network infrastructure.Which switch is configured correctly to meet these requirements ?",
+    "questionZh": "請參見圖示。 管理員使用存儲為密碼雜湊函數配置四台交換機進行本地身份驗證。這四台交換機還必須支持 SSH 訪問，以便管理員管理網路基礎設施。哪個交換機配置正確以滿足這些要求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "SW1"
+      },
+      {
+        "id": "B",
+        "text": "SW2"
+      },
+      {
+        "id": "C",
+        "text": "SW3"
+      },
+      {
+        "id": "D",
+        "text": "SW4"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q268",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q268.png",
+    "questionEn": "QUESTION 268: Which configuration is needed to generate an RSA key for SSH on a router?",
+    "questionZh": "在路由器上為 SSH 生成 RSA 密鑰需要哪些配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Configure the version of SSH"
+      },
+      {
+        "id": "B",
+        "text": "Configure VTY access."
+      },
+      {
+        "id": "C",
+        "text": "Create a user with a password."
+      },
+      {
+        "id": "D",
+        "text": "Assign a DNS domain name"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q326",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q326.png",
+    "questionEn": "QUESTION 326: A network administrator must to configure SSH for remote access to router R1 The requirement is to use a public and private key pair to encrypt management traffic to and from the connecting client. Which configuration, when applied, meets the requirements?",
+    "questionZh": "網路管理員必須為遠程訪問路由器 R1 配置 SSH 要求是使用公鑰和私鑰對來加密進出連接客戶端的管理流量。 哪種配置在應用時滿足要求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R1#enable\nR1#configure terminal\nR1(config)#ip domain-name cisco.com\nR1(config)#crypto key generate ec keysize 2048"
+      },
+      {
+        "id": "B",
+        "text": "R1#enable\nR1#configure terminal\nR1(config)#ip domain-name cisco.com\nR1(config)#crypto key generate rsa modulus 1024"
+      },
+      {
+        "id": "C",
+        "text": "R1#enable\nR1#configure terminal\nR1(config)#ip domain-name cisco.com\nR1(config)#crypto key generate ec keysize 1024"
+      },
+      {
+        "id": "D",
+        "text": "R1#enable\nR1#configure terminal\nR1(config)#ip domain-name cisco.com\nR1(config)#crypto key encrypt rsa name myKey"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q363",
+    "unit": "chapter4",
+    "type": "multiple",
+    "hasImage": false,
+    "imageUrl": "Images/Q363.png",
+    "questionEn": "QUESTION 363: Which two protocols are supported on service-port interfaces? (Choose two.)",
+    "questionZh": "服務介面port支持哪兩種協議？",
+    "options": [
+      {
+        "id": "A",
+        "text": "RADIUS"
+      },
+      {
+        "id": "B",
+        "text": "TACACS+"
+      },
+      {
+        "id": "C",
+        "text": "SCP"
+      },
+      {
+        "id": "D",
+        "text": "Telnet"
+      },
+      {
+        "id": "E",
+        "text": "SSH"
+      }
+    ],
+    "correctAnswers": [
+      "D",
+      "E"
+    ]
+  },
+  {
+    "id": "Q457",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q457.png",
+    "questionEn": "QUESTION 457: ",
+    "questionZh": "Which protocol is used for secure remote CLI access? 哪個協議用於安全的遠程 CLI 訪問？",
+    "options": [
+      {
+        "id": "A",
+        "text": "HTTPS"
+      },
+      {
+        "id": "B",
+        "text": "HTTP"
+      },
+      {
+        "id": "C",
+        "text": "Telnet"
+      },
+      {
+        "id": "D",
+        "text": "SSH"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q458",
+    "unit": "chapter4",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q458.png",
+    "questionEn": "QUESTION 458: Refer to the exhibit. Which two commands must be configured on router R1 to enable the router to accept secure remote-access connections? (Choose two)",
+    "questionZh": "請參見圖示。 必須在路由器 R1 上配置哪兩個命令才能使路由器接受安全的遠程訪問連接？",
+    "options": [
+      {
+        "id": "A",
+        "text": "transport input telnet"
+      },
+      {
+        "id": "B",
+        "text": "crypto key generate rsa"
+      },
+      {
+        "id": "C",
+        "text": "ip ssh pubkey-chain"
+      },
+      {
+        "id": "D",
+        "text": "login console"
+      },
+      {
+        "id": "E",
+        "text": "username cisco password 0 Cisco"
+      }
+    ],
+    "correctAnswers": [
+      "B",
+      "C"
+    ]
+  },
+  {
+    "id": "Q465",
+    "unit": "chapter4",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q465.png",
+    "questionEn": "QUESTION 465: Refer to the exhibit. Which two commands must be added to update the configuration of router R1 so that it accepts only encrypted connections? (Choose two) ip domain-name CNAC. com interface GigabitEthernet0/0/0 ip address 192.168.1.10 255.255.255.0 duplex auto peed auto ！ line vty 0 15 login local R1#show crypto key mypubkey rsa R1#show ssh %No SSHv2 server connections running %No SSHv1 server connections running",
+    "questionZh": "請參見圖示。 必須添加哪兩個命令來更新路由器 R1 的配置，使其只接受加密連接？",
+    "options": [
+      {
+        "id": "A",
+        "text": "username CNAC secret R!41!4319115@"
+      },
+      {
+        "id": "B",
+        "text": "ip ssh version 2"
+      },
+      {
+        "id": "C",
+        "text": "line vty 0 4"
+      },
+      {
+        "id": "D",
+        "text": "crypto key generate rsa 1024"
+      },
+      {
+        "id": "E",
+        "text": "transport input ssh"
+      }
+    ],
+    "correctAnswers": [
+      "D",
+      "E"
+    ]
+  },
+  {
+    "id": "Q509",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q509.png",
+    "questionEn": "QUESTION 509: Refer to the exhibit. Which minimum configuration items are needed to enable Secure Shell version 2 access to R15?",
+    "questionZh": "請參見圖示。 啟用 Secure Shell 版本 2 對 R15 的訪問需要哪些最低配置項？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Router(config)#hostname R15\nR15(config)#crypto key generate rsa general-keys modulus 1024\nR15(config-line #line vty 0 15\nR15(config-line)#transport input ssh\nR15(config)#ip ssh source-interface Fa0/0\nR15(config)#ip ssh stricthostkeycheck"
+      },
+      {
+        "id": "B",
+        "text": "Router(config)#crypto key generate rsa general-keys modulus 1024\nRouter(config)#ip ssh version 2\nRouter(config-line #line vty 0 15\nRouter(config-line)#transport input ssh\nRouter(config)#ip ssh logging events\nR15(config)#ip ssh stricthostkeycheck"
+      },
+      {
+        "id": "C",
+        "text": "Router(config)#ip domain-name cisco.com\nRouter(config)#crypto key generate rsa general-keys modulus 1024\nRouter(config)#ip ssh version 2\nRouter(config-line)#line vty 0 15\nRouter(config-line)#transport input all\nRouter(config)#ip ssh logging events"
+      },
+      {
+        "id": "D",
+        "text": "Router(config)#hostname R15\nR15(config)#ip domain-name cisco.com\nR15(config)#crypto key generate rsa general-keys modulus 1024\nR15(config)#ip ssh version 2\nR15(config-line)#line vty 0 15\nR15(config-line)#transport input ssh"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q519",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q519.png",
+    "questionEn": "QUESTION 519: A network engineer is configuring a switch so that it is remotely reachable via SSH. The engineer has already configured the host name on the router. Which additional command must the engineer configure before entering the command to generate the RSA key?",
+    "questionZh": "一位網路工程師正在配置一個交換機，以便通過 SSH 遠程訪問它。 工程師已經在路由器上配置好主機名。 工程師在輸入生成 RSA 密鑰的命令之前必須配置哪些附加命令？",
+    "options": [
+      {
+        "id": "A",
+        "text": "password password"
+      },
+      {
+        "id": "B",
+        "text": "crypto key generate rsa modulus 1024"
+      },
+      {
+        "id": "C",
+        "text": "ip domain-name domain"
+      },
+      {
+        "id": "D",
+        "text": "ip ssh authentication-retries 2"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q42",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q42.png",
+    "questionEn": "QUESTION 42: What is a difference between RADIUS and TACACS+?",
+    "questionZh": "RADIUS 和 TACACS+ 有什麼區別？",
+    "options": [
+      {
+        "id": "A",
+        "text": "TACACS+ encrypts only password information and RADIUS encrypts the entire payload"
+      },
+      {
+        "id": "B",
+        "text": "RADIUS logs all commands that are entered by the administrator, but TACACS+ logs only start, stop, and interim commands"
+      },
+      {
+        "id": "C",
+        "text": "RADIUS is most appropriate for dial authentication, but TACACS+ can be used for multiple types of authentication"
+      },
+      {
+        "id": "D",
+        "text": "TACACS+ separates authentication and authorization, and RADIUS merges them"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q51",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q51.png",
+    "questionEn": "QUESTION 51: How do AAA operations compare regarding user identification,user services,and access control?",
+    "questionZh": "AAA 運營在用戶識別、用戶服務和訪問控制方面如何比較？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Authorization provides access control,and authentication tracks user services"
+      },
+      {
+        "id": "B",
+        "text": "Accounting tracks user services,and authentication provides access control."
+      },
+      {
+        "id": "C",
+        "text": "Authorization identifies users,and authentication provides access control"
+      },
+      {
+        "id": "D",
+        "text": "Authentication identifies users,and accounting tracks user services"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q105",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q105.png",
+    "questionEn": "QUESTION 105: What is the primary different between AAA authentication and authorization?",
+    "questionZh": "AAA 認證和授權之間的主要區別是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Authentication verifies a username and password, and authorization handles the communication between the authentication agent and the user database"
+      },
+      {
+        "id": "B",
+        "text": "Authentication identifies a user who is attempting to access a system, and authorization validates the users password"
+      },
+      {
+        "id": "C",
+        "text": "Authentication identifies and verifies a user who is attempting to access a system, and authorization controls the tasks the user can perform."
+      },
+      {
+        "id": "D",
+        "text": "Authentication controls the system processes a user can access and authorization logs the activities the user initiates"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q394",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q394.png",
+    "questionEn": "QUESTION 394: After installing a new Cisco ISE server, which task must the engineer perform on the Cisco WLC to connect wireless clients on a specific VLAN based on their credentials?",
+    "questionZh": "安裝新的 Cisco ISE 服務器後，工程師必須在 Cisco WLC 上執行哪個任務才能根據憑證連接特定 VLAN 上的無線客戶端？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Enable the allow AAA Override"
+      },
+      {
+        "id": "B",
+        "text": "Enable the Even: Driven RRM."
+      },
+      {
+        "id": "C",
+        "text": "Disable the LAG Mode or Next Reboot."
+      },
+      {
+        "id": "D",
+        "text": "Enable the Authorized MIC APs against auth-list or AAA."
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q476",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q476.png",
+    "questionEn": "QUESTION 476: Which characteristic differentiates the concept of authentication from authorization and accounting?",
+    "questionZh": "哪個特徵將身份驗證的概念與授權和記帳區分開來？",
+    "options": [
+      {
+        "id": "A",
+        "text": "user-activity logging"
+      },
+      {
+        "id": "B",
+        "text": "service limitations"
+      },
+      {
+        "id": "C",
+        "text": "consumption-based billing"
+      },
+      {
+        "id": "D",
+        "text": "identity verification"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q1",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q1.png",
+    "questionEn": "QUESTION 1: A network engineer must create a diagram of a multivendor network.which command must be configured on the Cisco devices so that the topology of the network can be mapped?",
+    "questionZh": "網路工程師必須創建多供應商網路圖。必須在 Cisco 設備上配置哪個命令才能映射網路拓撲？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Device(config)#lldp run"
+      },
+      {
+        "id": "B",
+        "text": "Device(config)#cdp run"
+      },
+      {
+        "id": "C",
+        "text": "Device(config)# cdp enable"
+      },
+      {
+        "id": "D",
+        "text": "Device(config)# flow-sampler-map topology"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q61",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q61.png",
+    "questionEn": "QUESTION 61: Which command is used to specify the delay time in seconds for LLDP to initialize on any interface?",
+    "questionZh": "哪個命令用於指定 LLDP 在任何界面上初始化的延遲時間（以秒為單位）？",
+    "options": [
+      {
+        "id": "A",
+        "text": "lldp timer"
+      },
+      {
+        "id": "B",
+        "text": "lldp holdtime"
+      },
+      {
+        "id": "C",
+        "text": "lldp reinit"
+      },
+      {
+        "id": "D",
+        "text": "lldp tlv-select"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q97",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q97.png",
+    "questionEn": "QUESTION 97: ",
+    "questionZh": "Refer to the exhibit. Which command provides this output? 請參見圖示。 哪個命令提供此輸出？",
+    "options": [
+      {
+        "id": "A",
+        "text": "show ip route"
+      },
+      {
+        "id": "B",
+        "text": "show ip interface"
+      },
+      {
+        "id": "C",
+        "text": "show interface"
+      },
+      {
+        "id": "D",
+        "text": "show cdp neighbor"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q175",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q175.png",
+    "questionEn": "QUESTION 175: An engineer needs to configure LLDP to send the port description time length value (TLV). What command sequence must be implemented?",
+    "questionZh": "工程師需要配置 LLDP 以發送介面描述時間長度值 (TLV)。 必須執行什麼命令序列？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switch#lldp port-description"
+      },
+      {
+        "id": "B",
+        "text": "switch(config)#lldp port-description"
+      },
+      {
+        "id": "C",
+        "text": "switch(config-line}#lldp port-description"
+      },
+      {
+        "id": "D",
+        "text": "switch(config-if)#lldp port-description"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q346",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q346.png",
+    "questionEn": "QUESTION 346: An engineer configures interface Gi1/0 on the company PE router to connect to an ISP Neighbor discovery is disabled. Which action is necessary to complete the configuration if the ISP uses third-party network devices?",
+    "questionZh": "工程師將公司 PE 路由器上的port Gi1/0 配置為連接到 ISP 鄰居發現已禁用。 如果 ISP 使用第三方網路設備，需要執行什麼操作才能完成配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Enable LLDP globally"
+      },
+      {
+        "id": "B",
+        "text": "Disable autonegotiation"
+      },
+      {
+        "id": "C",
+        "text": "Disable Cisco Discovery Protocol on the interface"
+      },
+      {
+        "id": "D",
+        "text": "Enable LLDP-MED on the ISP device"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q313",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q313.png",
+    "questionEn": "QUESTION 313: Refer to the exhibit. An administrator must turn off the Cisco Discovery Protocol on the port configured with address last usable address in the 10.0.0.0/30 subnet. Which command set meets the requirement?",
+    "questionZh": "請參見圖示。 管理員必須關閉配置有 10.0.0.0/30 子網中最後可用地址的介面上的思科發現協議。 哪個命令集符合要求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "interface gi0/1\nno cdp enable"
+      },
+      {
+        "id": "B",
+        "text": "interface gi0/1\nclear cdp table"
+      },
+      {
+        "id": "C",
+        "text": "interface gi0/0\nno cdp advertise-v2"
+      },
+      {
+        "id": "D",
+        "text": "interface gi0/0\nno cdp run"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q364",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q364.png",
+    "questionEn": "QUESTION 364: ",
+    "questionZh": "Refer to the exhibit. How must router A be configured so that it only sends Cisco Discovery Protocol Information to router C?  請參見圖示。 必須如何配置路由器 A，以便它只向路由器 C 發送 Cisco 發現協議信息？",
+    "options": [
+      {
+        "id": "A",
+        "text": "#config t\nRouter A(config)#cdp run\nRouter A(config)#interface gi0/0/0\nRouter A(config-if)#no cdp enable"
+      },
+      {
+        "id": "B",
+        "text": "#config t\nRouter A(config)#cdp run\nRouter A(config)#interface gi0/0/0\nRouter A(config-if)#cdp enable"
+      },
+      {
+        "id": "C",
+        "text": "#config t\nRouter A(config)#cdp run\nRouter A(config)#interface gi0/0/1\nRouter A(config-if)#cdp enable"
+      },
+      {
+        "id": "D",
+        "text": "#config t\nRouter A(config)#no cdp run\nRouter A(config)#interface gi0/0/1\nRouter A(config-if)#cdp enable"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q445",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q445.png",
+    "questionEn": "QUESTION 445: Refer to the exhibit. For security reasons, automatic neighbor discovery must be disabled on the R5 Gi0/1 interface. These tasks must be completed: * Disable all neighbor discovery methods on R5 interface Gi0/1. * Permit neighbor discovery on R5 interface Gi0/2. * Verify there are no dynamically learned neighbors on R5 interface Gi0/1. * Display the IP address of R6*s interface Gi0/2. Which configuration must be used?",
+    "questionZh": "請參見圖示。 出於安全原因，必須在 R5 Gi0/1 介面上禁用自動鄰居發現。這些任務必須完成：\n必須使用哪種配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R5(config)#int Gi0/1\nR5(config-if)#no cdp run\nR5(configif)#exit\nR5(config)#lldp run\nR5(config)#cdp enable\nR5#sh cdp neighbor\nR5#sh lldp neighbor"
+      },
+      {
+        "id": "B",
+        "text": "R5(config)#int Gi0/1\nR5(config-if)#no cdp enable\nR5(config-if)#exit\nR5(config)#no ldp run\nR5(config)#cdp run\nR5#sh cdp neighbor\nR5#sh lldp neighbor"
+      },
+      {
+        "id": "C",
+        "text": "R5(config )#int Gi0/1\nR5(config-if)#no cdp enable\nR5(config-if)#exit\nR5(config)#no lldp run\nR5(config)#cdp run\nR5#sh cdp neighbor detail\nR5#sh lldp neighbor"
+      },
+      {
+        "id": "D",
+        "text": "R5(config)#int Gi0/1\nR5(config-if)#no cdp enable\nR5(config-if)#exit\nR5(config)#lldp run\nR5(config)#no cdp run\nR5#sh cdp neighbor detail\nR5t#sh lldp neighbor"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q455",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q455.png",
+    "questionEn": "QUESTION 455: Refer to the exhibit. A network engineer must update the configuration on Switch2 so that it sends LLDP packets every minute and the information sent via LLDP is refreshed every 3 minutes Which configuration must the engineer apply?",
+    "questionZh": "請參見圖示。 網路工程師必須更新 Switch2 上的配置，使其每分鐘發送一次 LLDP 數據包，並且通過 LLDP 發送的信息每 3 分鐘刷新一次 工程師必須應用哪種配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Switch2(config)#lldp timer 60\nSwitch2(config)#lldp holdtime 180"
+      },
+      {
+        "id": "B",
+        "text": "Switch2(config)#lldp timer 60\nSwitch2(config)#lldp tlv-select 180"
+      },
+      {
+        "id": "C",
+        "text": "Switch2(config)#lldp timer 1\nSwitch2(config)#lldp holdtime 3"
+      },
+      {
+        "id": "D",
+        "text": "Switch2(config)#lldp timer 1\nSwitch2(config)#lldp tlv-select 3"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q508",
+    "unit": "chapter4",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q508.png",
+    "questionEn": "QUESTION 508: A Cisco engineer must configure a single switch interface to meet these requirements accept untagged frames and place them in VLAN 20 accept tagged frames in VLAN 30 when CDP detects a Cisco IP phone Which command set must the engineer apply?",
+    "questionZh": "Cisco 工程師必須配置單個交換機介面以滿足這些要求 接受未標記的訊框並將它們放入 VLAN 20 當 CDP 檢測到 Cisco IP 電話時，接受 VLAN 30 中的標記訊框 工程師必須應用哪個命令集？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switchport mode dynamic desirable\nswitchport access vlan 20\nswitchport trunk allowed vlan 30\nswitchport voice vlan 30"
+      },
+      {
+        "id": "B",
+        "text": "switchport mode dynamic auto\nswitchport trunk native vlan 20\nswitchport trunk allowed vlan 30\nswitchport voice vlan 30"
+      },
+      {
+        "id": "C",
+        "text": "switchport mode access\nswitchport access vlan 20\nswitchport voice vlan 30"
+      },
+      {
+        "id": "D",
+        "text": "switchport mode trunk\nswitchport access vlan 20\nswitchport voice vlan 30"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  }
+,
+
+  {
+    "id": "Q156",
+    "unit": "chapter4",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 156: Match the AAA components with their functions.",
+    "questionZh": "配對 AAA 組件與它們的功能。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "controls the actions that a user can perform"
+      },
+      {
+        "id": "opt2",
+        "text": "provides analytical information for the network administrator"
+      },
+      {
+        "id": "opt3",
+        "text": "records user activities"
+      },
+      {
+        "id": "opt4",
+        "text": "restricts the services that are available to a user"
+      },
+      {
+        "id": "opt5",
+        "text": "verifies the password associated with a user"
+      },
+      {
+        "id": "opt6",
+        "text": "identifies the user"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Authentication"
+      },
+      {
+        "id": "b2",
+        "text": "Authorization"
+      },
+      {
+        "id": "b3",
+        "text": "Accounting"
+      }
+    ],
+    "correctAnswers": {
+      "opt5": "b1",
+      "opt6": "b1",
+      "opt1": "b2",
+      "opt4": "b2",
+      "opt2": "b3",
+      "opt3": "b3"
+    }
+  },
+  {
+    "id": "Q333",
+    "unit": "chapter4",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 333: Arrange the commands to set the enable secret password.",
+    "questionZh": "排列設定 enable secret 密碼的指令順序。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "configure terminal"
+      },
+      {
+        "id": "opt2",
+        "text": "enable"
+      },
+      {
+        "id": "opt3",
+        "text": "enable secret shf!@4fs"
+      },
+      {
+        "id": "opt4",
+        "text": "exit"
+      },
+      {
+        "id": "opt5",
+        "text": "line vty 0 4"
+      },
+      {
+        "id": "opt6",
+        "text": "service password-encryption"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Step 1"
+      },
+      {
+        "id": "b2",
+        "text": "Step 2"
+      },
+      {
+        "id": "b3",
+        "text": "Step 3"
+      },
+      {
+        "id": "b4",
+        "text": "Step 4"
+      }
+    ],
+    "correctAnswers": {
+      "opt2": "b1",
+      "opt1": "b2",
+      "opt3": "b3",
+      "opt4": "b4"
+    }
+  },
+  {
+    "id": "Q336",
+    "unit": "chapter4",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 336: Match AAA components with their descriptions.",
+    "questionZh": "配對 AAA 組件與它們的描述。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "Accounting"
+      },
+      {
+        "id": "opt2",
+        "text": "Authentication"
+      },
+      {
+        "id": "opt3",
+        "text": "Authorization"
+      },
+      {
+        "id": "opt4",
+        "text": "CoA"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "tracks activity"
+      },
+      {
+        "id": "b2",
+        "text": "updates session attributes"
+      },
+      {
+        "id": "b3",
+        "text": "verifies access rights"
+      },
+      {
+        "id": "b4",
+        "text": "verifies identity"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt4": "b2",
+      "opt3": "b3",
+      "opt2": "b4"
+    }
+  },
+  {
+    "id": "Q537",
+    "unit": "chapter4",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 537: Match the features to RADIUS or TACACS+.",
+    "questionZh": "配對特性至 RADIUS 或 TACACS+。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "encrypts only the password when it sends an access request"
+      },
+      {
+        "id": "opt2",
+        "text": "encrypts the entire body of the access-request packet"
+      },
+      {
+        "id": "opt3",
+        "text": "separates all three AAA operations"
+      },
+      {
+        "id": "opt4",
+        "text": "combines authentication and authorization"
+      },
+      {
+        "id": "opt5",
+        "text": "uses TCP"
+      },
+      {
+        "id": "opt6",
+        "text": "uses UDP"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "RADIUS"
+      },
+      {
+        "id": "b2",
+        "text": "TACACS+"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt2": "b2",
+      "opt3": "b2",
+      "opt4": "b1",
+      "opt5": "b2",
+      "opt6": "b1"
+    }
+  },
+  {
+    "id": "Q540",
+    "unit": "chapter4",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 540: Match the AAA components with their descriptions.",
+    "questionZh": "配對 AAA 組件與它們的描述。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "secures access to routers"
+      },
+      {
+        "id": "opt2",
+        "text": "validates user credentials"
+      },
+      {
+        "id": "opt3",
+        "text": "allows the user to change to enable mode"
+      },
+      {
+        "id": "opt4",
+        "text": "limits the user's access permissions"
+      },
+      {
+        "id": "opt5",
+        "text": "logs session statistics"
+      },
+      {
+        "id": "opt6",
+        "text": "records user commands"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Authentication"
+      },
+      {
+        "id": "b2",
+        "text": "Authorization"
+      },
+      {
+        "id": "b3",
+        "text": "Accounting"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt2": "b1",
+      "opt3": "b2",
+      "opt4": "b2",
+      "opt5": "b3",
+      "opt6": "b3"
+    }
+  }
+,
+
+  {
+    "id": "Q6",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q6.png",
+    "questionEn": "QUESTION 6: A Cisco IP phone receive untagged data traffic from an attached PC. Which action is taken by the phone?",
+    "questionZh": "Cisco IP 電話從連接的 PC 接收未標記的數據流量。 手機採取了哪些行動？",
+    "options": [
+      {
+        "id": "A",
+        "text": "It allows the traffic to pass through unchanged"
+      },
+      {
+        "id": "B",
+        "text": "It drops the traffic"
+      },
+      {
+        "id": "C",
+        "text": "It tags the traffic with the default VLAN"
+      },
+      {
+        "id": "D",
+        "text": "It tags the traffic with the native VLAN"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q71",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q71.png",
+    "questionEn": "QUESTION 71: What is the default behavior of a layer 2 switch when a frame with an unknown destination MAC address is received ?",
+    "questionZh": "當收到目標 MAC 地址未知的訊框時，第 2 層交換機的預設行為是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The Layer 2 switch forwards the packet and adds the destination MAC address to its MAC address table"
+      },
+      {
+        "id": "B",
+        "text": "The Layer 2 switch sends a copy of a packet to CPU for destination MAC address learning"
+      },
+      {
+        "id": "C",
+        "text": "The Layer 2 switch floods packets to all ports except the receiving port in the given VLAN"
+      },
+      {
+        "id": "D",
+        "text": "The Layer 2 switch dorps the received frame"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q76",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q76.png",
+    "questionEn": "QUESTION 76: The network administrator wants VLAN 67 traffic to be untagged between Switch 1 and Switch 2 while all other VLANs are to remain tagged. Which command accomplishes this task?",
+    "questionZh": "網路管理員希望在交換器1和交換器2之間取消VLAN 67流量的標記，而所有其他VLAN仍要保持標記。 哪個命令可以完成此任務？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switchport access vlan 67"
+      },
+      {
+        "id": "B",
+        "text": "switchport trunk allowed vlan 67"
+      },
+      {
+        "id": "C",
+        "text": "switchport private-vlan association host 67"
+      },
+      {
+        "id": "D",
+        "text": "switchport trunk native vlan 67"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q81",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q81.png",
+    "questionEn": "QUESTION 81: Refer to the Exhibit. After the switch configuration the ping test fails between PC A and PC B Based on the output for switch 1. Which error must be corrected?",
+    "questionZh": "請參見圖示。 進行交換器配置後，根據交換器1的輸出，PC A和PC B之間的ping測試將失敗。必須糾正哪個錯誤？",
+    "options": [
+      {
+        "id": "A",
+        "text": "There is a native VLAN mismatch"
+      },
+      {
+        "id": "B",
+        "text": "Access mode is configured on the switch ports."
+      },
+      {
+        "id": "C",
+        "text": "The PCs are m the incorrect VLAN"
+      },
+      {
+        "id": "D",
+        "text": "All VLANs are not enabled on the trunk"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q94",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q94.png",
+    "questionEn": "QUESTION 94: Refer to Exhibit. Which action do the switches take on the trunk link?",
+    "questionZh": "請參閱附件。 交換器在主幹鏈路上採取什麼動作？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The trunk does not form and the ports go into an err-disabled status."
+      },
+      {
+        "id": "B",
+        "text": "The trunk forms but the mismatched native VLANs are merged into a single broadcast domain."
+      },
+      {
+        "id": "C",
+        "text": "The trunk does not form, but VLAN 99 and VLAN 999 are allowed to traverse the link."
+      },
+      {
+        "id": "D",
+        "text": "The trunk forms but VLAN 99 and VLAN 999 are in a shutdown state."
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q96",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q96.png",
+    "questionEn": "QUESTION 96: Two switches are connected and using Cisco Dynamic Trunking Protocol SW1 is set to Dynamic Desirable. What is the result of this configuration?",
+    "questionZh": "連接了兩個交換器，並且使用Cisco Dynamic Trunking Protocol(DTP) SW1設置為Dynamic Desirable。 此配置的結果是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The link is in a downstate."
+      },
+      {
+        "id": "B",
+        "text": "The link is in an error disables state"
+      },
+      {
+        "id": "C",
+        "text": "The link is becomes an access port."
+      },
+      {
+        "id": "D",
+        "text": "The link becomes a trunk port."
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q115",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q115.png",
+    "questionEn": "QUESTION 115: ",
+    "questionZh": "Refer to the exhibit. Which action is expected from SW1 when the untagged from is received on the GigabitEthernet0/1 interface ?  請參見圖示。在GigabitEthernet0 / 1介面上收到未標記來源時，SW1會採取什麼措施？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The frame is dropped"
+      },
+      {
+        "id": "B",
+        "text": "The frame is processed in VLAN 5"
+      },
+      {
+        "id": "C",
+        "text": "The frame is processed in VLAN 11"
+      },
+      {
+        "id": "D",
+        "text": "The frame is processed in VLAN 1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q136",
+    "unit": "chapter_switch",
+    "type": "multiple",
+    "hasImage": false,
+    "imageUrl": "Images/Q136.png",
+    "questionEn": "QUESTION 136: An engineer is asked to protect unused ports that are configured in the default VLAN on a switch. Which two steps will fulfill the request? (Choose two)",
+    "questionZh": "要求工程師保護在交換器的預設VLAN中配置的未使用的ports。 哪兩個步驟可以滿足要求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Configure the ports in an EtherChannel."
+      },
+      {
+        "id": "B",
+        "text": "Administratively shut down the ports"
+      },
+      {
+        "id": "C",
+        "text": "Configure the port type as access and place in VLAN 99"
+      },
+      {
+        "id": "D",
+        "text": "Configure the ports as trunk ports"
+      },
+      {
+        "id": "E",
+        "text": "Enable the Cisco Discovery Protocol"
+      }
+    ],
+    "correctAnswers": [
+      "B",
+      "C"
+    ]
+  },
+  {
+    "id": "Q142",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q142.png",
+    "questionEn": "QUESTION 142: Refer to the exhibit. An administrator is tasked with configuring a voice VLAN. What is the expected outcome when a Cisco phone is connected to the GigabitEfriemet3/1/4 port on a switch?",
+    "questionZh": "請參見圖示。 管理員負責配置語音 VLAN。 當 Cisco 電話連接到交換機上的 GigabitEfriemet3/1/4 port時，預期結果是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "The phone and a workstation that is connected to the phone do not have VLAN connectivity"
+      },
+      {
+        "id": "B",
+        "text": "The phone and a workstation that is connected to the phone send and receive data in VLAN 50."
+      },
+      {
+        "id": "C",
+        "text": "The phone sends and receives data in VLAN 50, but a workstation connected to the phone has no VLAN connectivity"
+      },
+      {
+        "id": "D",
+        "text": "The phone sends and receives data in VLAN 50, but a workstation connected to the phone sends and receives data in VLAN 1"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q154",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q154.png",
+    "questionEn": "QUESTION 154: Refer to the exhibit,what commands are needed to add a subinterface to Ethernet0/0 on R1 to allow for VLAN 20.with IP address 10.20.20.1/24?",
+    "questionZh": "請參見圖示，需要什麼命令將子介面添加到R1的Ethernet0 / 0上，以允許IP地址為10.20.20.1/24的VLAN 20？",
+    "options": [
+      {
+        "id": "A",
+        "text": "R(config)#interface ethernet0/0\nR(config)#encapsulation dot1q 20\nR(config)#ip address 10.20.20.1 255.255.255.0"
+      },
+      {
+        "id": "B",
+        "text": "R(config)#interface ethernet0/0.20\nR(config)#encapsulation dot1q 20\nR(config)#ip address 10.20.20.1 255.255.255.0"
+      },
+      {
+        "id": "C",
+        "text": "R(config)#interface ethernet0/0\nR(config)#ip address 10.20.20.1 255.255.255.0"
+      },
+      {
+        "id": "D",
+        "text": "R(config)#interface ethernet0/0.20\nR(config)#ip address 10.20.20.1 255.255.255.0"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q172",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q172.png",
+    "questionEn": "QUESTION 172: Refer to the exhibit. A network administrator assumes a task to complete the connectivity between PC A and the File Server Switch A and Switch B have been partially configured with VLANs 10, 11, 12, and 13 What is the next step in the configuration?",
+    "questionZh": "請參見圖示。 網路管理員承擔了完成PC A與檔案服務器Switch A和Switch B之間的連接的任務，而部分配置了VLAN 10、11、12和13。下一步是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Add PDA to VLAN 10 and the File Server to VLAN 11 for VLAN segmentation"
+      },
+      {
+        "id": "B",
+        "text": "Add VLAN 13 to the trunk links on Switch A and Switch B for VLAN propagation"
+      },
+      {
+        "id": "C",
+        "text": "Add a router on a stick between Switch A and Switch B allowing for Inter VLAN routing"
+      },
+      {
+        "id": "D",
+        "text": "Add PC A to the same subnet as the File Server allowing for intra-VLAN communication"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q239",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q239.png",
+    "questionEn": "QUESTION 239: An engineer must configure Interswitch VLAN communication between a Cisco switch and a third-party switch. Which action should be taken?",
+    "questionZh": "工程師必須在 Cisco 交換機和第三方交換機之間配置 Interswitch VLAN 通信。 應該採取什麼措施？",
+    "options": [
+      {
+        "id": "A",
+        "text": "configure IEEE 802.1p"
+      },
+      {
+        "id": "B",
+        "text": "configure IEEE 802.1q"
+      },
+      {
+        "id": "C",
+        "text": "configure ISL"
+      },
+      {
+        "id": "D",
+        "text": "configure DSCP"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q270",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q270.png",
+    "questionEn": "QUESTION 270: An engineer must configure traffic for a VLAN that is untagged by the switch as it crosses a trunk link. Which command should be used?",
+    "questionZh": "當交換機穿過主幹鏈路時，工程師必須為交換機未標記的 VLAN 配置流量。 應該使用哪個命令？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switchport trunk allowed vlan 10"
+      },
+      {
+        "id": "B",
+        "text": "switchport trunk native vlan 10"
+      },
+      {
+        "id": "C",
+        "text": "switchport mode trunk"
+      },
+      {
+        "id": "D",
+        "text": "switchport trunk encapsulation dot1q"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q279",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q279.png",
+    "questionEn": "QUESTION 279: Refer to the exhibit. A network engineer must configured communication between PC A and the File Server. To prevent interruption for any other communications, which command must be configured?",
+    "questionZh": "請參見圖示。 網絡工程師必須配置 PC A 和文件服務器(File Server)之間的通信。 為防止任何其他通信中斷，必須配置哪個命令？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Switch trunk allowed vlan 12"
+      },
+      {
+        "id": "B",
+        "text": "Switchport trunk allowed vlan none"
+      },
+      {
+        "id": "C",
+        "text": "Switchport trunk allowed vlan add 13"
+      },
+      {
+        "id": "D",
+        "text": "Switchport trunk allowed vlan remove 10-11"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q292",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q292.png",
+    "questionEn": "QUESTION 292: How is the native VLAN secured in a network?",
+    "questionZh": "本地 VLAN 如何在網路中得到保護？",
+    "options": [
+      {
+        "id": "A",
+        "text": "separate from other VLANs within the administrative domain"
+      },
+      {
+        "id": "B",
+        "text": "give it a value in the private VLAN range"
+      },
+      {
+        "id": "C",
+        "text": "assign it as VLAN 1"
+      },
+      {
+        "id": "D",
+        "text": "configure it as a different VLAN ID on each end of the link"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q340",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q340.png",
+    "questionEn": "QUESTION 340: Which access layer threat-mitigation technique provides security based on identity?",
+    "questionZh": "哪種接入層威脅緩解技術可提供基於身份的安全性？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Dynamic ARP Inspection"
+      },
+      {
+        "id": "B",
+        "text": "using a non-default native VLAN"
+      },
+      {
+        "id": "C",
+        "text": "802.1x"
+      },
+      {
+        "id": "D",
+        "text": "DHCP snooping"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q343",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q343.png",
+    "questionEn": "QUESTION 343: A network administrator is asked to configure VLANS 2, 3 and 4 for a new implementation. Some ports must be assigned to the new VLANS with unused remaining. Which action should be taken for the unused ports?",
+    "questionZh": "要求網絡管理員為新實施配置 VLANS 2、3 和 4。 必須將一些ports分配給新的 VLAN，並保留未使用的port。 未使用的ports應該採取什麼措施？",
+    "options": [
+      {
+        "id": "A",
+        "text": "configure port in the native VLAN"
+      },
+      {
+        "id": "B",
+        "text": "configure ports in a black hole VLAN"
+      },
+      {
+        "id": "C",
+        "text": "configure in a nondefault native VLAN"
+      },
+      {
+        "id": "D",
+        "text": "configure ports as access ports"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q376",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q376.png",
+    "questionEn": "QUESTION 376: How are VLAN hopping attacks mitigated?",
+    "questionZh": "如何緩解 VLAN 跳躍攻擊？",
+    "options": [
+      {
+        "id": "A",
+        "text": "enable dynamic ARP inspection"
+      },
+      {
+        "id": "B",
+        "text": "manually implement trunk ports and disable DTP"
+      },
+      {
+        "id": "C",
+        "text": "activate all ports and place in the default VLAN"
+      },
+      {
+        "id": "D",
+        "text": "configure extended VLANs"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q405",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q405.png",
+    "questionEn": "QUESTION 405: An engineer is configuring data and voice services to pass through the same port. The designated switch interface fastethernet0/1 must transmit packets using the same priority for data when they are received from the access port of the IP phone. Which configuration must be used?",
+    "questionZh": "工程師正在配置數據和語音業務通過同一個port。 指定的交換機介面 fasternet0/1 在從 IP 電話的訪問介面接收到數據包時，必須使用相同的數據優先級傳輸數據包。 必須使用哪種配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "interface fastethernet0/1\nswitchport priority extend cos 7"
+      },
+      {
+        "id": "B",
+        "text": "interface fastethernet0/1\nswitchport voice vlan untagged"
+      },
+      {
+        "id": "C",
+        "text": "interface fastethernet0/1\nswitchport voice vlan dot1p"
+      },
+      {
+        "id": "D",
+        "text": "interface fastethernet0/1\nswitchport priority extend trust"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q491",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q491.png",
+    "questionEn": "QUESTION 491: Refer to the exhibit. An engineer is asked to insert the new VLAN into the existing trunk without modifying anything previously configured Which command accomplishes this task?",
+    "questionZh": "請參見圖示。 一位工程師被要求將新的 VLAN 插入現有的主幹而不修改任何以前配置的內容哪個命令完成這個任務？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switchport trunk allowed vlan 100-104"
+      },
+      {
+        "id": "B",
+        "text": "switchport trunk allowed vlan add 104"
+      },
+      {
+        "id": "C",
+        "text": "switchport trunk allowed vlan all"
+      },
+      {
+        "id": "D",
+        "text": "switchport trunk allowed vlan 104"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q500",
+    "unit": "chapter_switch",
+    "type": "multiple",
+    "hasImage": false,
+    "imageUrl": "Images/Q500.png",
+    "questionEn": "QUESTION 500: A network engineer must configure two new subnets using the address block 10.70.128.0/19 to meet these requirements: * Both subnets must use the longest subnet mask possible from the address block. Which two configurations must be used to configure the new subnets and meet a requirement to use the first available address in each subnet for the router interfaces? (Choose two)",
+    "questionZh": "網絡工程師必須使用地址塊 10.70.128.0/19 配置兩個新子網以滿足這些要求\n* The first subnet must support 24 hosts       \t* 第一個子網必須支持24台主機\n* The second subnet must support 472 hosts\t\t* 第二個子網必須支持 472 台主機\n* 兩個子網都必須使用地址區塊中可能的最長子網遮罩\n必須使用哪兩個配置來配置新子網並滿足將每個子網中第一個可用地址用於路由器介面的要求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "interface vlan 1234\nip address 10.70.159.1 255.255.254.0"
+      },
+      {
+        "id": "B",
+        "text": "interface vlan 1148\nip address 10.70.148.1 255.255.254.0"
+      },
+      {
+        "id": "C",
+        "text": "interface vlan 4722\nip address 10.70.133.17 255.255.255.192"
+      },
+      {
+        "id": "D",
+        "text": "interface vlan 3002\nip address 10.70.147.17 255.255.255.224"
+      },
+      {
+        "id": "E",
+        "text": "interface vlan 155\nip address 10.70.155.65 255.255.255.224"
+      }
+    ],
+    "correctAnswers": [
+      "B",
+      "E"
+    ]
+  },
+  {
+    "id": "Q503",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q503.png",
+    "questionEn": "QUESTION 503: Refer to the exhibit. All VLANs are present in the VLAN database. Which command sequence must be applied to complete the configuration?",
+    "questionZh": "請參見圖示。 所有 VLAN 都存在於 VLAN 數據庫中。 必須應用哪個命令序列才能完成配置？",
+    "options": [
+      {
+        "id": "A",
+        "text": "Interface FastEthernet0/1 switchport trunk native vlan 10 switchport trunk allowed vlan 10,15"
+      },
+      {
+        "id": "B",
+        "text": "Interface FastEthernet0/1 switchport mode trunk switchport trunk allowed vlan 10,15"
+      },
+      {
+        "id": "C",
+        "text": "interface FastEthernet0/1 switchport mode access switchport voice vlan 10"
+      },
+      {
+        "id": "D",
+        "text": "Interface FastEthernet0/1 switchport trunk allowed vlan add 10 vlan 10 private-vlan isolated"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q508",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q508.png",
+    "questionEn": "QUESTION 508: A Cisco engineer must configure a single switch interface to meet these requirements \taccept untagged frames and place them in VLAN 20 \taccept tagged frames in VLAN 30 when CDP detects a Cisco IP phone Which command set must the engineer apply?",
+    "questionZh": "Cisco 工程師必須配置單個交換機介面才能滿足這些要求\n 接受未標記的訊框並將它們放置在 VLAN 20 中\n 當 CDP 檢測到 Cisco IP 電話時，接受 VLAN 30 中的標記訊框\n工程師必須應用哪個命令集？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switchport mode dynamic desirable\nswitchport access vlan 20\nswitchport trunk allowed vlan 30\nswitchport voice vlan 30"
+      },
+      {
+        "id": "B",
+        "text": "switchport mode dynamic auto\nswitchport trunk native vlan 20\nswitchport trunk allowed vlan 30\nswitchport voice vlan 30"
+      },
+      {
+        "id": "C",
+        "text": "switchport mode access\nswitchport access vlan 20\nswitchport voice vlan 30"
+      },
+      {
+        "id": "D",
+        "text": "switchport mode trunk\nswitchport access vlan 20\nswitchport voice vlan 30"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q527",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q527.png",
+    "questionEn": "QUESTION 527: Which Layer 2 switch function encapsulates packets for different VLANs so that the packets traverse the same port and maintain traffic separation between the VLANs?",
+    "questionZh": "哪個二層交換機功能將數據包封裝到不同的 VLAN 中，使數據包通過相同的 port 並保持 VLAN 之間的流量分離？",
+    "options": [
+      {
+        "id": "A",
+        "text": "VLAN numbering，"
+      },
+      {
+        "id": "B",
+        "text": "VLAN DSCP"
+      },
+      {
+        "id": "C",
+        "text": "VLAN tagging"
+      },
+      {
+        "id": "D",
+        "text": "VLAN marking"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q530",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q530.png",
+    "questionEn": "QUESTION 530: Refer to the exhibit. An engineer has started to configure replacement switch SW1. To verify part of the configuration, the engineer issued the commands as shown and noticed that the entry for PC2 is missing. Which change must be applied to SW1 so that PC1 and PC2 communicate normally?",
+    "questionZh": "請參見圖示。 工程師已開始配置替換開關 SW1。 為了驗證部分配置，工程師發出如下圖所示的命令，並註意到 PC2 的項目(entry)丟失了。 必須對 SW1 進行哪項更改才能使 PC1 和 PC2 正常通信？",
+    "options": [
+      {
+        "id": "A",
+        "text": "SW1(config)#interface fa0/2\nSW1(config-if)#no switchport mode trunk\nSW1(config-if)#no switchport trunk allowed vlan 3\nSW1(config-if)#switchport mode access"
+      },
+      {
+        "id": "B",
+        "text": "SW1(config)#interface fa0/1\nSW1(config-if)#no switchport access vlan 2\nSW1(config-if)#switchport trunk native vlan 2\nSW1(config-if)#switchport trunk allowed vlan 3"
+      },
+      {
+        "id": "C",
+        "text": "SW1(config)#interface fa0/1\nSW1(config-if)#no switchport access vlan 2\nSW1(config-if)#switchport access vlan 3\nSW1(config-if)#switchport trunk allowed vlan 2"
+      },
+      {
+        "id": "D",
+        "text": "SW1(config)#interface fa0/2\nSW1(config-if)#no switchport access vlan 2\nSW1(config-if)#no switchport trunk allowed vlan 3\nSW1(config-if)#switchport trunk allowed vlan 2"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q546",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q546.png",
+    "questionEn": "QUESTION 546: Refer to the exhibit. The following must be considered: Which configuration establishes a successful ping from PC2 to PC7 without interruption to traffic flow between other PCs?",
+    "questionZh": "請參見圖示。 必須考慮以下因素：\n* SW1 is fully configured for all traffic                * SW1 針對所有流量進行了全面配置\n* The SW4 and SW9 links to SW1 have been configured  * SW4 和 SW9 鏈接到 SW1 已經配置\n* The SW4 interface Gi0/1 and Gi0/0 on SW9 have been configured  * SW4上的Gi0/1介面和SW9介面的Gi0/0介面已經配置\n* The remaining switches have had all VLANs added to their VLAN database. * 其餘交換機已將所有 VLAN 添加到其 VLAN 數據庫中。\n哪種配置可以在不中斷其他 PC 之間的流量的情況下，建立從 PC2 到 PC7 的成功 ping？",
+    "options": [
+      {
+        "id": "A",
+        "text": "SW4#\ninterface Gi0/2\nswitchport mode trunk\nswitchport trunk allowed vlan 14\nSW11#\ninterface Gi0/1\nswitchport mode trunk\nswitchport trunk allowed vlan 14\nSW9#\ninterface Gi0/2\nswitc hport mode trunk\nswitchport trunk allowed vlan 108"
+      },
+      {
+        "id": "B",
+        "text": "SW4\ninterface Gi0/7\nswitchport mode trunk\nswitchport trunk allowed vlan 108\ninterface Gi0/2\nswitchport mode access\nswitchport access vlan 14\nSW11#\ninterface Gi0/2\nswitchport mode trunk\nswitchport trunk allowed vlan 14,108\ninterface Gi0/1\nswitchport mode trunk\nswitchport trunk allowed vlan 14,108\nSW9#\ninterface Gi0/2\nswitchport mode access\nswitchport access vlan 14"
+      },
+      {
+        "id": "C",
+        "text": "SW4#\ninterface Gi0/2\nswitchport mode trunk\nswitchport trunk allowed vlan 14,108\nSW11#\ninterface Gi0/2\nswitchport mode trunk\nswitchport trunk allowed vlan 14,108\ninterface Gi0/1\nswitchport mode trunk\nswitchport trunk allowed vlan 14,108\nSW9#\ninterface Gi0/2\nswitchport mode trunk\nswitchport trunk allowed vlan 14"
+      },
+      {
+        "id": "D",
+        "text": "SW4#\ninterface Gi0/2\nswitchport mode access\nswitchport access vlan 14\nSW11#\ninterface Gi0/2\nswitchport mode access\nswitchport access vlan14\ninterface Gi0/0\nswitchport mode access\nswitchport access vlan14\ninterface Gi0/1\nswitchport mode trunk\nSW9#\ninterface Gi0/2\nswitchport mode access\nswitchport access vlan 14"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q548",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q548.png",
+    "questionEn": "QUESTION 548: Refer to the exhibit. The engineer configured the VLANs on the new AccSw2 switch. A router-on-a-stick is connected to both switches. How must the ports be configured on AccSw2 to establish full connectivity between the two switches and for Server1?",
+    "questionZh": "請參見圖示。 工程師在新的 AccSw2 交換機上配置了 VLAN。 單臂路由連接到兩個交換機。 必須如何在 AccSw2 上配置ports才能在兩台交換機之間和 Server1 之間建立完全連接？",
+    "options": [
+      {
+        "id": "A",
+        "text": "interface GigabitEthernet1/1\nswitchport access vlan 11\ninterface GigabitEthernet1/24\nswitchport mode trunk\nswitchport trunk allowed vlan 10,11"
+      },
+      {
+        "id": "B",
+        "text": "interface GigabitEthernet1/1\nswitchport mode access\nswitchport access vlan 11\ninterface GigabitEthernet1/24\nswitchport mode trunk"
+      },
+      {
+        "id": "C",
+        "text": "interface GigabitEthernet1/3\nswitchport mode access\nswitchport access vlan 10\ninterface GigabitEthernet1/24\nswitchport mode trunk"
+      },
+      {
+        "id": "D",
+        "text": "interface GigabitEthernet1/3\nswitchport mode access\nswitchport access vlan 10\ninterface GigabitEthernet1/24\nswitchport mode trunk\nswitchport trunk allowed vlan 2,10"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q188",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q188.png",
+    "questionEn": "QUESTION 188: A network administrator enabled port security on a switch interface connected to a printer. What is the next configuration action in order to allow the port to learn the MAC address of the printer and insert it into the table automatically?",
+    "questionZh": "網絡管理員在連接到打印機的交換機介面上啟用了port安全。 為了讓port學習打印機的 MAC 地址並自動將其插入MAC表中，下一步的配置操作是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "enable dynamic MAC address learning"
+      },
+      {
+        "id": "B",
+        "text": "implement static MAC addressing."
+      },
+      {
+        "id": "C",
+        "text": "enable sticky MAC addressing"
+      },
+      {
+        "id": "D",
+        "text": "implement auto MAC address learning"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q229",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q229.png",
+    "questionEn": "QUESTION 229: A port security violation has occurred on a switch port due to the maximum MAC address count being exceeded,which command must be configured to increment the security-violation count and forward an SNMP trap?",
+    "questionZh": "由於超過了最大 MAC 地址計數，交換機port發生了port安全違規，必須配置哪個命令來增加安全違規計數並轉發 SNMP 陷阱？",
+    "options": [
+      {
+        "id": "A",
+        "text": "switchport port-security violation access"
+      },
+      {
+        "id": "B",
+        "text": "switchport port-security violation protect"
+      },
+      {
+        "id": "C",
+        "text": "switchport port-security violation restrict"
+      },
+      {
+        "id": "D",
+        "text": "switchport port-security violation shutdown"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q304",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q304.png",
+    "questionEn": "QUESTION 304: What causes a port to be placed in the err-disabled state?",
+    "questionZh": "是什麼導致port處於錯誤禁用狀態？",
+    "options": [
+      {
+        "id": "A",
+        "text": "latency"
+      },
+      {
+        "id": "B",
+        "text": "port security violation"
+      },
+      {
+        "id": "C",
+        "text": "shutdown command issued on the port"
+      },
+      {
+        "id": "D",
+        "text": "nothing plugged into the port"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q520",
+    "unit": "chapter_switch",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q520.png",
+    "questionEn": "QUESTION 520: Refer to the exhibit. Switch A is newly configured. All VLANs are present in the VLAN database. The IP phone and PC A on Gi0/1 must be configured for the appropriate VLANs to establish connectivity between the PCs. Which command set fulfills the requirement?",
+    "questionZh": "請參見圖示。 交換機 A 是新配置的。 所有 VLAN 都存在於 VLAN 數據庫中。 Gi0/1 上的 IP 電話和 PC A 必須配置為適當的 VLAN 以在 PC 之間建立連接。 哪個命令集滿足要求？",
+    "options": [
+      {
+        "id": "A",
+        "text": "SwitchA(config-if)#switchport mode access\nSwitchA(config-if)#switchport access vlan 50\nSwitchA(config-if)#switchport voice vlan 51"
+      },
+      {
+        "id": "B",
+        "text": "SwitchA(config-if)#switchport mode access\nSwitchA(config-if)#switchport access vlan 50\nSwitchA(config-if)#switchport voice vlan untagged"
+      },
+      {
+        "id": "C",
+        "text": "SwitchA(config-if)#switchport mode trunk\nSwitchA(config-if)#switchport trunk allowed vlan add 50, 51\nSwitchA(config-if)#switchport voice vlan dot1p"
+      },
+      {
+        "id": "D",
+        "text": "SwitchA(config-if)#switchport mode trunk\nSwitchA(config-if)#switchport trunk allowed vlan 50, 51\nSwitchA(config-if)#mls qos trust cos"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  }
+,
+
+  {
+    "id": "Q220",
+    "unit": "chapter_switch",
+    "type": "match",
+    "hasImage": false,
+    "questionEn": "QUESTION 220: Arrange the commands in order to configure port security.",
+    "questionZh": "排列設定埠安全 (Port Security) 的指令順序。",
+    "options": [
+      {
+        "id": "opt1",
+        "text": "switchport mode access"
+      },
+      {
+        "id": "opt2",
+        "text": "switchport port-security"
+      },
+      {
+        "id": "opt3",
+        "text": "switchport port-security mac-address 0060.3EDD.77ab"
+      },
+      {
+        "id": "opt4",
+        "text": "switchport port-security mac-address 00D0.D3ED.622A"
+      },
+      {
+        "id": "opt5",
+        "text": "switchport port-security mac-address sticky"
+      },
+      {
+        "id": "opt6",
+        "text": "switchport port-security maximum 2"
+      },
+      {
+        "id": "opt7",
+        "text": "switchport port-security violation shutdown"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "b1",
+        "text": "Step 1"
+      },
+      {
+        "id": "b2",
+        "text": "Step 2"
+      },
+      {
+        "id": "b3",
+        "text": "Step 3"
+      },
+      {
+        "id": "b4",
+        "text": "Step 4"
+      }
+    ],
+    "correctAnswers": {
+      "opt1": "b1",
+      "opt2": "b2",
+      "opt6": "b3",
+      "opt5": "b4"
+    }
+  }
+,
+
+  {
+    "id": "Q50",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q50.png",
+    "questionEn": "QUESTION 50: Which interface is used to send traffic to the destination network? D 10.148.172.22/27 [90/10259] via G0/24 D 10.148.172.22/27 [90/47955] via G0/10 R 10.148.172.22/27 [120/14] via G0/5 R 10.148.172.22/27 [120/1] via G0/1",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "G0/10"
+      },
+      {
+        "id": "B",
+        "text": "G0/24"
+      },
+      {
+        "id": "C",
+        "text": "G0/5"
+      },
+      {
+        "id": "D",
+        "text": "G0/1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q124",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q124.png",
+    "questionEn": "QUESTION 124: Which interface is used to send traffic to the destination network? O 10.90.207.87/26 [110/1912] via F0/7 O 10.90.207.87/26 [110/28968] via F0/6 R 10.90.207.87/26 [120/14] via F0/4 R 10.90.207.87/26 [120/11] via F0/5",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "F0/7"
+      },
+      {
+        "id": "B",
+        "text": "F0/6"
+      },
+      {
+        "id": "C",
+        "text": "F0/4"
+      },
+      {
+        "id": "D",
+        "text": "F0/5"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q206",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q206.png",
+    "questionEn": "QUESTION 206: Which interface is used to send traffic to the destination network? D 10.214.247.237/28 [90/2170] via G0/12 D 10.214.247.237/28 [90/46985] via G0/19 O 10.214.247.237/28 [110/665] via G0/9 O 10.214.247.237/28 [110/3399] via G0/1",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "G0/19"
+      },
+      {
+        "id": "B",
+        "text": "G0/12"
+      },
+      {
+        "id": "C",
+        "text": "G0/9"
+      },
+      {
+        "id": "D",
+        "text": "G0/1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q247",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q247.png",
+    "questionEn": "QUESTION 247: Which interface is used to send traffic to the destination network? O 10.139.120.253/29 [110/9443] via G0/20 O 10.139.120.253/29 [110/29560] via G0/16 R 10.139.120.253/29 [120/12] via G0/11 R 10.139.120.253/29 [120/6] via G0/9",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "G0/9"
+      },
+      {
+        "id": "B",
+        "text": "G0/20"
+      },
+      {
+        "id": "C",
+        "text": "G0/16"
+      },
+      {
+        "id": "D",
+        "text": "G0/11"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q251",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q251.png",
+    "questionEn": "QUESTION 251: Which interface is used to send traffic to the destination network? D 10.114.106.212/29 [90/6782] via G0/15 D 10.114.106.212/29 [90/50042] via G0/20 R 10.114.106.212/29 [120/4] via G0/4",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "G0/4"
+      },
+      {
+        "id": "B",
+        "text": "G0/15"
+      },
+      {
+        "id": "C",
+        "text": "G0/18"
+      },
+      {
+        "id": "D",
+        "text": "G0/20"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q276",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q276.png",
+    "questionEn": "QUESTION 276: Refer to the exhibit. With which metric does router R1 learn the route to host 172.16.0.202?",
+    "questionZh": "請參考圖片，路由器 R1 是以什麼度量值學習到到主機 172.16.0.202 的路由？",
+    "options": [
+      {
+        "id": "A",
+        "text": "90"
+      },
+      {
+        "id": "B",
+        "text": "110"
+      },
+      {
+        "id": "C",
+        "text": "32445"
+      },
+      {
+        "id": "D",
+        "text": "3184439"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q278",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q278.png",
+    "questionEn": "QUESTION 278: Refer to the exhibit. What is the next-hop IP address for R2 so that PC2 reaches the application server via EIGRP?",
+    "questionZh": "請參考此展示範例。為了讓 PC2 透過 EIGRP 到達應用伺服器，R2 的下一跳 IP 位址 應該是？",
+    "options": [
+      {
+        "id": "A",
+        "text": "192.168.30.1"
+      },
+      {
+        "id": "B",
+        "text": "10.10.10.6"
+      },
+      {
+        "id": "C",
+        "text": "10.10.10.5"
+      },
+      {
+        "id": "D",
+        "text": "192.168.20.1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q368",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q368.png",
+    "questionEn": "QUESTION 368: Which interface is used to send traffic to the destination network? O 10.18.75.113/27 [110/6906] via G0/6 O 10.18.75.113/27 [110/23018] via G0/3 R 10.18.75.113/27 [120/16] via G0/16 R 10.18.75.113/27 [120/14] via G0/23",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "G0/6"
+      },
+      {
+        "id": "B",
+        "text": "G0/3"
+      },
+      {
+        "id": "C",
+        "text": "G0/16"
+      },
+      {
+        "id": "D",
+        "text": "G0/26"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q386",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q386.png",
+    "questionEn": "QUESTION 386: Which interface is used to send traffic to the destination network? D 10.254.55.69/28 [90/9388] via G0/16 D 10.254.55.69/28 [90/50147] via G0/21 R 10.254.55.69/28 [120/15] via G0/5 R 10.254.55.69/28 [120/13] via G0/4",
+    "questionZh": "",
+    "options": [
+      {
+        "id": "A",
+        "text": "G0/21"
+      },
+      {
+        "id": "B",
+        "text": "G0/4"
+      },
+      {
+        "id": "C",
+        "text": "G0/5"
+      },
+      {
+        "id": "D",
+        "text": "G0/16"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q427",
+    "unit": "final",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q427.png",
+    "questionEn": "QUESTION 427: Which interface is used to send traffic to the destination network? D 10.47.114.119/29 [90/6451] via F0/2 D 10.47.114.119/29 [90/52201] via F0/20 R 10.47.114.119/29 [120/9] via F0/12 R 10.47.114.119/29 [120/10] via F0/10",
+    "questionZh": "哪一個介面會被用來發送流量到目的網路?",
+    "options": [
+      {
+        "id": "A",
+        "text": "F0/2"
+      },
+      {
+        "id": "B",
+        "text": "F0/20"
+      },
+      {
+        "id": "C",
+        "text": "F0/12"
+      },
+      {
+        "id": "D",
+        "text": "F0/10"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q514",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q514.png",
+    "questionEn": "QUESTION 514: Refer to the exhibit. What is the subnet mask for route 172.16.4.0?",
+    "questionZh": "請參考圖示，路由172.16.4.0的子網路遮罩是什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "255.255.255.192"
+      },
+      {
+        "id": "B",
+        "text": "255.255.240.0"
+      },
+      {
+        "id": "C",
+        "text": "255.255.254.0"
+      },
+      {
+        "id": "D",
+        "text": "255.255.248.0"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q517",
+    "unit": "final",
+    "type": "multiple",
+    "hasImage": true,
+    "imageUrl": "Images/Q517.png",
+    "questionEn": "QUESTION 517: Refer to the exhibit. Which two values does router R1 use to identify valid routes for the R3 loopback address 1.1.1.3/32? (Choose two.)",
+    "questionZh": "參考圖示，路由器 R1 使用哪兩個值來識別 R3 迴環地址 1.1.1.3/32 的有效路由？（選擇兩個）",
+    "options": [
+      {
+        "id": "A",
+        "text": "lowest cost to reach the next hop"
+      },
+      {
+        "id": "B",
+        "text": "highest administrative distance"
+      },
+      {
+        "id": "C",
+        "text": "lowest metric"
+      },
+      {
+        "id": "D",
+        "text": "highest metric"
+      },
+      {
+        "id": "E",
+        "text": "lowest administrative distance"
+      }
+    ],
+    "correctAnswers": [
+      "C",
+      "E"
+    ]
+  },
+  {
+    "id": "Q524",
+    "unit": "final",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q524.png",
+    "questionEn": "QUESTION 524: Refer to the exhibit. Which prefix did router R1 learn from internal EIGRP?",
+    "questionZh": "請參閱圖示，路由器 R1 從內部 EIGRP 學習到的前置碼是哪一個？",
+    "options": [
+      {
+        "id": "A",
+        "text": "192.168.3.0/24"
+      },
+      {
+        "id": "B",
+        "text": "192.168.1.0/24"
+      },
+      {
+        "id": "C",
+        "text": "172.16.1.0/24"
+      },
+      {
+        "id": "D",
+        "text": "192.168.2.0/24"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q274",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q274.png",
+    "questionEn": "QUESTION 274: Refer to the exhibit. The IPv6 address for the LAN segment on router R1 must be configured using the EUI-64 format. When configured which Ipv6 address Is produced by the router?",
+    "questionZh": "請參閱圖示。路由器 R1 上 LAN 網段的 IPv6 位址必須使用 EUI-64 格式進行設定。設定後，路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:1006:1968:4564:877F:FE99:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:1006:1968:1119:BEFF:FE67:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:1006:1968:1130:ABFF:FECC:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:1006:1968:12D8:BAFE:FF01:1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q281",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q281.png",
+    "questionEn": "QUESTION 281: Refer to the exhibit. Which format matches the Modified EUI-64 IPv6 interface address for the network 2001:db8::/64?",
+    "questionZh": "請參閱圖示。哪一種格式與網路 2001:db8::/64 的修改後的 EUI-64 IPv6 介面位址相符？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8::5000:00ff:fe04:0000/64"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8::4332:5800:41ff:fe06:/64"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8::5000:0004:5678:0090/64"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8::5200:00ff:fe04:0000/64"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q999",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q999.png",
+    "questionEn": "QUESTION 999: Refer to the exhibit. The iPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. Which address must be used?",
+    "questionZh": "請參閱圖示。路由器 R2 上 LAN 網段的 iPv6 位址必須使用 EUI-64 格式進行設定。必須使用哪個位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:10A0:ABFF:FECC:1 eui-64"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:1230:ABFF:FECC:1 eui-64"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:4331:89FF:FF23:9 eui-64"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:12A0:AB34:FFCC:1 eui-64"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q285",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q285.png",
+    "questionEn": "QUESTION 285: Refer to the exhibit. The iPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. Which address must be used?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問哪個 IPv6 位址會被使用？",
+    "options": [
+      {
+        "id": "A",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:10A0:ABFF:FECC:1 eui-64"
+      },
+      {
+        "id": "B",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:1230:ABFF:FECC:1 eui-64"
+      },
+      {
+        "id": "C",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:4331:89FF:FF23:9 eui-64"
+      },
+      {
+        "id": "D",
+        "text": "ipv6 address 2001:DB8:D8D2:1009:12A0:AB34:FFCC:1 eui-64"
+      }
+    ],
+    "correctAnswers": [
+      "A"
+    ]
+  },
+  {
+    "id": "Q335",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q335.png",
+    "questionEn": "QUESTION 335: Refer to the exhibit. The IPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:d955:1008:12D8:BAFE:FF01:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:d955:1008:4598:785F:FE25:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:d955:1008:1030:ABFF:FECC:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:d955:1008:10D8:BAFF:FEC2:1"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q347",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q347.png",
+    "questionEn": "QUESTION 347: Refer to the exhibit. The IPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:9bb6:6bb9:C081:B6FF:FF4B:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:9bb6:6bb9:C001:6BFE:FF01:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:9bb6:6bb9:4679:824F:FE88:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:9bb6:6bb9:C801:B6FF:FEB4:1"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q361",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q361.png",
+    "questionEn": "QUESTION 361: Refer to the exhibit. The IPv6 address for the LAN segment on router R1 must be configured using the EUI-64 format. When configured which Ipv6 address Is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R1 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:3bb8:3bb1:C810:B3FF:FF8B:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:3bb8:3bb1:C001:3BFE:FF81:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:3bb8:3bb4:6363:93FF:EF66:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:3bb8:3181:C801:3BFF:FE8B:1"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q367",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q367.png",
+    "questionEn": "QUESTION 367: Refer to the exhibit. The IPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:bd69:1469:12D8:BAFE:FF01:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:bd69:1469:1130:ABFF:FECC:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:bd69:1469:4628:255F:FE32:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:bd69:1469:11BE:BFFF:FEB9:1"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q370",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q370.png",
+    "questionEn": "QUESTION 370: Refer to the exhibit. The IPv6 address for the LAN segment on router R1 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R1 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:1a44:41a4:C081:BFFF:FE4A:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:1a44:41a4:C801:BEFF:FE4A:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:1a44:41a4:4660:592F:FE65:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:1a44:41a4:C800:BAFE:FF00:1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q371",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": false,
+    "imageUrl": "Images/Q371.png",
+    "questionEn": "QUESTION 371: What does a router do when it is configured with the default DNS lookup settings, and a URL is entered on the CLI?",
+    "questionZh": "當路由器配置了預設 DNS 查找設定並在 CLI 上輸入 URL 時，它會做什麼？",
+    "options": [
+      {
+        "id": "A",
+        "text": "It continuously attempts to resolve the URL until the command is cancelled"
+      },
+      {
+        "id": "B",
+        "text": "It initiates a ping request to the URL"
+      },
+      {
+        "id": "C",
+        "text": "It prompts the user to specify the desired IP address"
+      },
+      {
+        "id": "D",
+        "text": "It attempts to query a DNS server on the network"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  },
+  {
+    "id": "Q415",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q415.png",
+    "questionEn": "QUESTION 415: Refer to the exhibit. The IPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:d945:91:12A0:AB34:FFCC:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:d945:91:11B0:ABFF:FECC:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:d945:91:4661:59FF:FF53:5"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:d945:91:1130:ABFF:FECC:1"
+      }
+    ],
+    "correctAnswers": [
+      "B"
+    ]
+  },
+  {
+    "id": "Q420",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q420.png",
+    "questionEn": "QUESTION 420: Refer to the exhibit. The IPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:d955:1697:1130:ABFF:FECC:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:d955:1697:4657:149F:FE65:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:d955:1697:11D8:BFFF:FE69:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:d955:1697:12D8:BAFE:FF01:1"
+      }
+    ],
+    "correctAnswers": [
+      "C"
+    ]
+  },
+  {
+    "id": "Q432",
+    "unit": "chapter8",
+    "type": "single",
+    "hasImage": true,
+    "imageUrl": "Images/Q432.png",
+    "questionEn": "QUESTION 432: Refer to the exhibit. The IPv6 address for the LAN segment on router R2 must be configured using the EUI-64 format. When configured which ipv6 address is produced by the router?",
+    "questionZh": "請參閱圖示，要在路由器 R2 的區域網段用 EUI-64 格式進行配置 IPv6 位址，請問設定後路由器會產生哪個 IPv6 位址？",
+    "options": [
+      {
+        "id": "A",
+        "text": "2001:db8:8bb8:8bb1:C081:B8FF:FF4B:1"
+      },
+      {
+        "id": "B",
+        "text": "2001:db8:8bb8:8bb1:C001:8BFE:FF01:1"
+      },
+      {
+        "id": "C",
+        "text": "2001:db8:8bb8:8bb4:6792:43FF:EF87:1"
+      },
+      {
+        "id": "D",
+        "text": "2001:db8:8bb8:8bb1:C801:B8FF:FEB8:1"
+      }
+    ],
+    "correctAnswers": [
+      "D"
+    ]
+  }
+
+];
+
+// ==========================================
+// 2. 應用程式邏輯區
+// ==========================================
+let currentQuestions = [];
+let currentIndex = 0;
+let userAnswers = {};
+let currentShuffledOptions = [];
+
+const appContainer = document.getElementById('app');
+
+// 打亂陣列工具
+function shuffle(array) {
+    let newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    }
+    return newArr;
+}
+
+// 啟動測驗
+function startQuiz(unit) {
+    if (unit === 'all') {
+        currentQuestions = shuffle(quizData);
+    } else if (unit === 'final_all') {
+        currentQuestions = shuffle(quizData.filter(q => ['chapter4', 'final', 'chapter8', 'chapter_switch'].includes(q.unit)));
+    } else {
+        currentQuestions = shuffle(quizData.filter(q => q.unit === unit));
+    }
+    currentIndex = 0;
+    userAnswers = {};
+    renderQuiz();
+}
+
+// 選擇選項 (單選與多選)
+function toggleOption(optId, type) {
+    let qId = currentQuestions[currentIndex].id;
+    if (!userAnswers[qId]) userAnswers[qId] = [];
+    
+    if (type === 'single') {
+        userAnswers[qId] = [optId];
+    } else {
+        let idx = userAnswers[qId].indexOf(optId);
+        if (idx > -1) userAnswers[qId].splice(idx, 1);
+        else userAnswers[qId].push(optId);
+    }
+    renderQuiz(); // 重新渲染更新 UI
+}
+
+// 處理配對題選項變更
+window.updateMatch = function(optId, bucketId) {
+    let qId = currentQuestions[currentIndex].id;
+    if (!userAnswers[qId]) userAnswers[qId] = {};
+    
+    if (bucketId === "") {
+        delete userAnswers[qId][optId]; // 如果選回空白，就刪除該紀錄
+    } else {
+        userAnswers[qId][optId] = bucketId; // 紀錄選項對應的籃子
+    }
+    renderQuiz();
+}
+
+// 下一題
+function nextQuestion() {
+    if (currentIndex < currentQuestions.length - 1) {
+        currentIndex++;
+        renderQuiz();
+    } else {
+        renderResults();
+    }
+}
+
+// 判斷對錯 (升級版：支援單/多選與配對題)
+function isCorrect(qId, correctData) {
+    let q = currentQuestions.find(item => item.id === qId);
+    let uAns = userAnswers[qId];
+
+    if (q.type === 'match') {
+        if (!uAns) return false;
+        let correctKeys = Object.keys(correctData);
+        let userKeys = Object.keys(uAns);
+        
+        // 檢查是否有選錯的 (包含選了不該選的陷阱題)
+        for (let key of userKeys) {
+            if (uAns[key] !== correctData[key]) return false;
+        }
+        // 檢查是否所有該配對的都有配對到
+        for (let key of correctKeys) {
+            if (uAns[key] !== correctData[key]) return false;
+        }
+        return true;
+    } else {
+        // 原本選擇題的邏輯
+        if (!uAns) uAns = [];
+        if (uAns.length !== correctData.length) return false;
+        return correctData.every(ans => uAns.includes(ans));
+    }
+}
+
+// ==========================================
+// 3. 畫面渲染區
+// ==========================================
+
+let currentExamMode = 'midterm'; // 'midterm' 或 'final'
+
+window.switchMode = function(mode) {
+    if (currentExamMode === mode) return;
+    currentExamMode = mode;
+    renderHome();
+}
+
+function getTabsHTML() {
+    return `
+        <div style="display: flex; background: white; border-bottom: 1px solid #e5e7eb;">
+            <div onclick="switchMode('midterm')" style="flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; ${currentExamMode === 'midterm' ? 'color: #2563eb; border-bottom: 3px solid #2563eb;' : 'color: #9ca3af; border-bottom: 3px solid transparent;'}">
+                📚 期中考
+            </div>
+            <div onclick="switchMode('final')" style="flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; ${currentExamMode === 'final' ? 'color: #2563eb; border-bottom: 3px solid #2563eb;' : 'color: #9ca3af; border-bottom: 3px solid transparent;'}">
+                📚 期末考
+            </div>
+        </div>
+    `;
+}
+
+// 渲染首頁
+function renderHome() {
+    let contentHTML = '';
+    let title = currentExamMode === 'midterm' ? '📚 期中考' : '📚 期末考';
+    
+    if (currentExamMode === 'midterm') {
+        contentHTML = `
+            <h3 style="text-align: center; color: #4b5563; margin-bottom: 20px;">請選擇練習模式</h3>
+            <button class="btn" onclick="startQuiz('chapter1')">📝 單元一</button>
+            <button class="btn" onclick="startQuiz('chapter2')">📝 單元二</button>
+            <button class="btn" onclick="startQuiz('chapter3')">📝 單元三</button>
+            <button class="btn" onclick="startQuiz('chapter4')">📝 單元四</button>
+            <button class="btn" onclick="startQuiz('chapter5')">📝 單元五</button>
+            <button class="btn" onclick="startQuiz('chapter6')">📝 單元六</button>
+            <hr style="border: 0; height: 1px; background: #e5e7eb; margin: 30px 0;">
+            <button class="btn" style="background: #2563eb; color: white; border: none;" onclick="startQuiz('all')">🚀 綜合總複習 (全題庫打亂)</button>
+        `;
+    } else {
+        contentHTML = `
+            <h3 style="text-align: center; color: #4b5563; margin-bottom: 20px;">請選擇練習模式</h3>
+            <button class="btn" onclick="startQuiz('chapter4')">📝 單元四</button>
+            <button class="btn" onclick="startQuiz('final')">📝 單元五、六、七</button>
+            <button class="btn" onclick="startQuiz('chapter8')">📝 單元八</button>
+            <button class="btn" onclick="startQuiz('chapter_switch')">📝 Switch</button>
+            <hr style="border: 0; height: 1px; background: #e5e7eb; margin: 30px 0;">
+            <button class="btn" style="background: #2563eb; color: white; border: none;" onclick="startQuiz('final_all')">🚀 綜合總複習 (全題庫打亂)</button>
+        `;
+    }
+
+    appContainer.innerHTML = `
+        ${getTabsHTML()}
+        <div class="header">${title}</div>
+        <div class="content">
+            ${contentHTML}
+        </div>
+    `;
+}
+
+// 渲染考卷
+function renderQuiz() {
+    let q = currentQuestions[currentIndex];
+    let selected = userAnswers[q.id];
+    
+    // 每次進入新題目，打亂選項
+    if ((!selected || Object.keys(selected).length === 0) && !q._shuffled) {
+        q._shuffledOptions = shuffle(q.options);
+        q._shuffled = true;
+    }
+    
+    // 檢查是否有作答
+    let isAnswered = false;
+    if (q.type === 'match') {
+        isAnswered = selected && Object.keys(selected).length > 0; // 配對題只要有配對任一項即可亮按鈕
+    } else {
+        isAnswered = selected && selected.length > 0;
+    }
+    
+    let html = `
+        ${getTabsHTML()}
+        <div class="header" style="display: flex; justify-content: space-between; font-size: 16px;">
+            <span>${q.unit.replace('chapter', 'Chapter ').replace('final', '單元5、6、7')}</span>
+            <span>題目 ${currentIndex + 1} / ${currentQuestions.length}</span>
+        </div>
+        <div class="content">
+            <div>
+                ${q.type === 'multiple' ? '<span class="tag tag-multi">複選題 (多選)</span>' : (q.type === 'match' ? '<span class="tag tag-match">配對題 (下拉選單)</span>' : '<span class="tag tag-single">單選題</span>')}
+                ${q.hasImage ? '<span class="tag tag-img">🖼️ 需搭配圖示</span>' : ''}
+            </div>
+            <h2 style="margin-top: 10px;">${q.questionEn}</h2>
+            <p style="color: #4b5563; border-left: 4px solid #d1d5db; padding-left: 10px;">${q.questionZh}</p>
+            
+            ${q.hasImage && q.imageUrl ? `<div style="text-align:center;"><img class="question-img" src="${q.imageUrl}" alt="附圖" onerror="this.style.display='none'"></div>` : ''}
+            
+            <div style="margin-top: 20px;">
+                ${q.type === 'match' ? 
+                    // 渲染配對題 (下拉選單)
+                    q._shuffledOptions.map(opt => {
+                        let currentSelection = (userAnswers[q.id] && userAnswers[q.id][opt.id]) || '';
+                        return `
+                        <div style="display: flex; flex-direction: column; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 10px; background: white;">
+                            <span style="font-weight: 500; margin-bottom: 8px;">${opt.text}</span>
+                            <select onchange="updateMatch('${opt.id}', this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 14px;">
+                                <option value="">-- 選擇對應階層 --</option>
+                                ${q.buckets.map(b => `<option value="${b.id}" ${currentSelection === b.id ? 'selected' : ''}>${b.text}</option>`).join('')}
+                            </select>
+                        </div>`;
+                    }).join('') 
+                    : 
+                    // 渲染原本的選擇題
+                    q._shuffledOptions.map(opt => `
+                    <label class="option-label ${selected && selected.includes(opt.id) ? 'selected' : ''}" onclick="event.preventDefault(); toggleOption('${opt.id}', '${q.type}')">
+                        <input type="${q.type === 'multiple' ? 'checkbox' : 'radio'}" ${selected && selected.includes(opt.id) ? 'checked' : ''}>
+                        <span>${opt.text}</span>
+                    </label>
+                    `).join('')
+                }
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn" style="margin: 0; flex: 1; background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5;" onclick="renderResults()">
+                    提早交卷
+                </button>
+                <button class="${isAnswered ? 'btn btn-primary' : 'btn btn-disabled'}" 
+                        style="margin: 0; flex: 2;"
+                        ${isAnswered ? '' : 'disabled'} 
+                        onclick="nextQuestion()">
+                    ${currentIndex === currentQuestions.length - 1 ? '完成測驗' : '下一題'}
+                </button>
+            </div>
+        </div>
+    `;
+    appContainer.innerHTML = html;
+}
+
+// 渲染結果與錯題本
+function renderResults() {
+    let correctCount = 0;
+    let wrongHTML = '';
+    
+    currentQuestions.forEach(q => {
+        if (isCorrect(q.id, q.correctAnswers)) {
+            correctCount++;
+        } else {
+            let uAns = userAnswers[q.id] || (q.type === 'match' ? {} : []);
+            let userTexts = '';
+            let correctTexts = '';
+
+            // 判斷錯題本的渲染方式 (配對題 vs 選擇題)
+            if (q.type === 'match') {
+                // 正確答案渲染
+                correctTexts = Object.keys(q.correctAnswers).map(optId => {
+                    let optText = q.options.find(o => o.id === optId).text;
+                    let bucketText = q.buckets.find(b => b.id === q.correctAnswers[optId]).text;
+                    return `${optText} ➔ <b>${bucketText}</b>`;
+                }).join('<br>• ');
+
+                // 你的答案渲染
+                if (Object.keys(uAns).length === 0) {
+                    userTexts = '<i style="color:#f87171">未作答</i>';
+                } else {
+                    userTexts = Object.keys(uAns).map(optId => {
+                        let optText = q.options.find(o => o.id === optId).text;
+                        let bucketText = q.buckets.find(b => b.id === uAns[optId]).text;
+                        let isRight = q.correctAnswers[optId] === uAns[optId];
+                        return `${optText} ➔ <b style="color:${isRight ? '#166534' : '#991b1b'}">${bucketText} ${isRight ? '✅' : '❌'}</b>`;
+                    }).join('<br>• ');
+                }
+            } else {
+                correctTexts = q.correctAnswers.map(id => q.options.find(o=>o.id===id).text).join('<br>• ');
+                userTexts = uAns.length === 0 ? '<i style="color:#f87171">未作答</i>' : uAns.map(id => q.options.find(o=>o.id===id).text).join('<br>• ');
+            }
+            
+            wrongHTML += `
+                <div class="wrong-item">
+                    <span class="tag ${q.type === 'multiple' ? 'tag-multi' : (q.type === 'match' ? 'tag-match' : 'tag-single')}">${q.type === 'multiple' ? '多選' : (q.type === 'match' ? '配對' : '單選')}</span>
+                    <h4 style="margin-top: 10px;">${q.questionEn}</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin-bottom: 10px;">${q.questionZh}</p>
+                    ${q.hasImage && q.imageUrl ? `<div style="text-align:center;"><img class="question-img" src="${q.imageUrl}" style="max-height: 150px;"></div>` : ''}
+                    
+                    <div class="ans-box" style="${q.type === 'match' ? 'flex-direction: column;' : ''}">
+                        <div class="your-ans"><strong>❌ 你的答案：</strong><br>• ${userTexts}</div>
+                        <div class="correct-ans"><strong>✅ 正確答案：</strong><br>• ${correctTexts}</div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    let scorePercentage = Math.round((correctCount / currentQuestions.length) * 100);
+    
+    appContainer.innerHTML = `
+        ${getTabsHTML()}
+        <div class="header">測驗結果</div>
+        <div class="content">
+            <div class="result-box">
+                <div class="score-circle">${scorePercentage}%</div>
+                <h2>答對：${correctCount} / ${currentQuestions.length} 題</h2>
+                <button class="btn" style="width: auto; padding: 10px 30px; display: inline-block; margin-top: 10px;" onclick="renderHome()">返回首頁重測</button>
+            </div>
+            
+            ${wrongHTML ? `
+                <h3 style="color: #dc2626; margin-top: 30px;">🚨 錯題檢討區 (共錯 ${currentQuestions.length - correctCount} 題)</h3>
+                ${wrongHTML}
+            ` : `
+                <h3 style="color: #16a34a; text-align: center; margin-top: 30px;">🎉 太神啦！全對！考試穩了！</h3>
+            `}
+        </div>
+    `;
+}
+
+// 啟動程式
+renderHome();
+</script>
+
+</body>
+</html>
